@@ -1,10 +1,16 @@
-# Desarrollo con CMS Headless Contentful
+<img src="images/neteclogo (2).png" alt="logo" width="300"/>
 
-Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Curso práctico enfocado en desarrolladores para modelar contenido, consumir APIs REST y GraphQL de Contentful e integrarlas en aplicaciones modernas (frontend o backend).
+# Desarrollo con CMS Headless – Contentful
 
-## Estructura
+## Plataforma de laboratorios
 
-- `CapituloXX/README.md`: guía de laboratorio por capítulo.
+Te damos la bienvenida a la **plataforma de laboratorios** del curso **Desarrollo con CMS Headless – Contentful**. Aquí podrás explorar diferentes tecnologías a través de prácticas guiadas. ¡Desarrolla tus habilidades y lleva tus conocimientos al siguiente nivel!
+
+Curso práctico enfocado en desarrolladores para modelar contenido, consumir APIs REST y GraphQL de Contentful e integrarlas en aplicaciones modernas (frontend o backend).
+
+## Lista de laboratorios
+
+Cada uno de estos laboratorios está diseñado para ofrecerte una experiencia práctica. Haz clic en los enlaces para comenzar.
 
 ## Lista de laboratorios
 
@@ -37,9 +43,12 @@ Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Cu
 - [Proyecto Demo funcional end-to-end](Capitulo05/README.md#proyecto-demo-funcional-end-to-end)
   - Descripción: El participante desarrollará un portal digital funcional utilizando Contentful como CMS Headless. Deberá diseñar el modelo de contenido, implementar un frontend consumidor de APIs, configurar mecanismos seguros de autenticación y manejo de tokens, y ejecutar pruebas funcionales utilizando un checklist técnico. El proyecto deberá demostrar el ciclo completo de gestión, publicación y consumo de contenido en un escenario real de integración end-to-end.
   - Duración estimada: 30 min
+    
 
-## Flujo de colaboración
+## 📬 **Contacto y más información**
 
-- Trabajar en `changes_course`.
-- Crear Pull Request hacia `main`.
-- Merge por `Squash and merge`.
+Si tienes alguna pregunta o necesitas más detalles, no dudes en [contactarnos](mailto:soporte@netec.com). También puedes encontrar más recursos en nuestra [página](https://netec.com).
+
+---
+
+¡Gracias por visitar nuestra plataforma! No olvides revisar todos los laboratorios y comenzar tu viaje de aprendizaje hoy mismo.
