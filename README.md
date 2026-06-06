@@ -6,6 +6,27 @@ Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Cu
 
 - `CapituloXX/README.md`: guía de laboratorio por capítulo.
 
+## Contrato técnico del curso
+
+Todos los laboratorios usan el mismo espacio de Contentful, el environment `master` y el siguiente modelo canónico. Los API IDs y Field IDs deben respetarse exactamente para mantener la continuidad entre capítulos.
+
+| Content Type | Campos esperados |
+|---|---|
+| `article` | `title`, `slug`, `body`, `publishedAt`, `coverImage`, `category`, `author` |
+| `category` | `name`, `slug`, `description` |
+| `author` | `name`, `slug`, `bio`, `avatar` |
+
+Placeholders usados en el material:
+
+- `<CONTENTFUL_SPACE_ID>`
+- `<CONTENTFUL_DELIVERY_TOKEN>`
+- `<CONTENTFUL_PREVIEW_TOKEN>`
+- `<CONTENTFUL_MANAGEMENT_TOKEN>`
+- `<CONTENTFUL_ENVIRONMENT>`: usar `master` durante el curso.
+- `<WEBHOOK_SECRET>`
+
+El proyecto frontend único se llama `portal-noticias`. Se crea en el capítulo 4 y se continúa en el capítulo 5. El cliente de Contentful se mantiene en `portal-noticias/src/lib/contentfulClient.js`.
+
 ## Lista de laboratorios
 
 ### Capítulo 1
@@ -16,7 +37,7 @@ Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Cu
 
 ### Capítulo 2
 
-- [Crear una práctica respecto a las 4 lecciones de este capítulo](Capitulo02/README.md#crear-una-práctica-respecto-a-las-4-lecciones-de-este-capítulo)
+- [Consumo de la API REST de Contentful con el SDK de JavaScript](Capitulo02/README.md#consumo-de-la-api-rest-de-contentful-con-el-sdk-de-javascript)
   - Descripción: El participante desarrollará un cliente de integración que se autentique contra Contentful utilizando credenciales adecuadas. Consumirá información mediante endpoints REST aplicando filtros y paginación, implementará consultas utilizando el SDK oficial para JavaScript/Node y gestionará escenarios de error y excepciones comunes. La actividad permitirá validar el ciclo completo de acceso, consulta y procesamiento de contenido desde aplicaciones externas.
   - Duración estimada: 85 min
 

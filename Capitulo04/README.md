@@ -18,6 +18,25 @@ En esta práctica integrarás todos los conceptos estudiados hasta ahora en un f
 
 ---
 
+### Escenario de la práctica
+
+El equipo frontend debe conectar el portal de noticias con Contentful y comprobar el flujo operativo que ocurre cuando una entrada se publica, genera un Webhook y requiere actualizar la experiencia entregada al usuario.
+
+### Objetivo de la práctica
+
+Construir el proyecto único `portal-noticias`, conectarlo al modelo canónico mediante `src/lib/contentfulClient.js` y validar el flujo de publicación, Webhook, actualización y rollback.
+
+### Cómo trabajar esta práctica
+
+1. Completa los bloques en orden; cada uno utiliza el resultado del anterior.
+2. Mantén identificadas las terminales del frontend, servidor de Webhooks y ngrok.
+3. Ejecuta la validación de cada bloque antes de modificar contenido o configuración adicional.
+4. Conserva `portal-noticias` al finalizar; la Práctica 5 continúa sobre este mismo proyecto.
+
+> **Importante:** El frontend solo debe usar el Delivery token. El secret del Webhook se configura en el servidor mediante `<WEBHOOK_SECRET>`.
+
+---
+
 ## Objetivos de Aprendizaje
 
 - [ ] Integrar la API de Contentful en una aplicación React (Vite) implementando los componentes `ArticleList` y `ArticleDetail` con renderizado de Rich Text.
@@ -31,7 +50,7 @@ En esta práctica integrarás todos los conceptos estudiados hasta ahora en un f
 ## Prerrequisitos
 
 ### Conocimientos previos
-- Haber completado las Prácticas 1, 2 y 3 (espacio Contentful configurado, Content Types `article` y `category` creados, módulo de acceso a la API implementado).
+- Haber completado las Prácticas 1, 2 y 3 (espacio Contentful configurado, Content Types `article`, `category` y `author` creados, módulo de acceso a la API implementado).
 - Componentes funcionales de React, hooks `useState` y `useEffect`.
 - Conceptos básicos de REST y variables de entorno en Node.js.
 
@@ -47,6 +66,8 @@ node --version   # >= 18.x
 npm --version    # >= 9.x
 ngrok --version  # >= 3.x (o usar webhook.site)
 ```
+
+> **Compatibilidad de terminal:** Los comandos de Node.js, npm y Git funcionan en Bash y PowerShell. Para llamadas HTTP en PowerShell usa `Invoke-RestMethod` o escribe `curl.exe` explícitamente; `curl` puede ser un alias con comportamiento diferente.
 
 ---
 
@@ -119,16 +140,18 @@ cd ../portal-noticias
 
 ```bash
 # portal-noticias/.env
-VITE_CONTENTFUL_SPACE_ID=tu_space_id_aqui
-VITE_CONTENTFUL_DELIVERY_TOKEN=tu_delivery_token_aqui
+VITE_CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+VITE_CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+VITE_CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
 ```
 
 2. Crea el archivo `.env.example` (este SÍ se commitea):
 
 ```bash
 # portal-noticias/.env.example
-VITE_CONTENTFUL_SPACE_ID=REEMPLAZAR_CON_TU_SPACE_ID
-VITE_CONTENTFUL_DELIVERY_TOKEN=REEMPLAZAR_CON_TU_DELIVERY_TOKEN
+VITE_CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+VITE_CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+VITE_CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
 ```
 
 3. Verifica que `.gitignore` incluya `.env`:
@@ -150,8 +173,8 @@ git status   # .env NO debe aparecer como archivo a commitear
 
 **Verificación:**
 ```bash
-cat .gitignore | grep ".env"
-# Debe mostrar al menos una línea con .env
+git check-ignore -v .env
+# Criterio observable: Git muestra la regla de .gitignore que excluye .env
 ```
 
 ---
@@ -165,7 +188,7 @@ cat .gitignore | grep ".env"
 1. Crea la carpeta `src/lib/`:
 
 ```bash
-mkdir -p src/lib
+node -e "require('fs').mkdirSync('src/lib',{recursive:true})"
 ```
 
 2. Crea el archivo `src/lib/contentfulClient.js`:
@@ -179,6 +202,7 @@ import { createClient } from 'contentful';
 const client = createClient({
   space: import.meta.env.VITE_CONTENTFUL_SPACE_ID,
   accessToken: import.meta.env.VITE_CONTENTFUL_DELIVERY_TOKEN,
+  environment: import.meta.env.VITE_CONTENTFUL_ENVIRONMENT || 'master',
 });
 
 export default client;
@@ -190,8 +214,7 @@ export default client;
 
 **Verificación:**
 ```bash
-cat src/lib/contentfulClient.js | grep "import.meta.env"
-# Debe mostrar las dos líneas con las variables de entorno
+node -e "const s=require('fs').readFileSync('src/lib/contentfulClient.js','utf8'); console.log('usa variables Vite:',s.includes('import.meta.env.VITE_CONTENTFUL_SPACE_ID')&&s.includes('import.meta.env.VITE_CONTENTFUL_DELIVERY_TOKEN'))"
 ```
 
 ---
@@ -285,7 +308,6 @@ function ArticleList({ onSelectArticle, selectedCategory }) {
               />
             )}
             <h2>{article.fields.title}</h2>
-            {article.fields.summary && <p>{article.fields.summary}</p>}
             {/* Categoría como badge */}
             {article.fields.category && (
               <span className="badge">
@@ -293,7 +315,7 @@ function ArticleList({ onSelectArticle, selectedCategory }) {
               </span>
             )}
             <small>
-              Publicado: {new Date(article.sys.createdAt).toLocaleDateString('es-MX')}
+              Publicado: {new Date(article.fields.publishedAt).toLocaleDateString('es-MX')}
             </small>
           </li>
         ))}
@@ -395,7 +417,7 @@ function ArticleDetail({ articleId, onBack }) {
   if (error) return <p className="error">{error}</p>;
   if (!article) return null;
 
-  const { title, summary, body, coverImage, category, author } = article.fields;
+  const { title, body, coverImage, category, author } = article.fields;
 
   return (
     <article className="article-detail">
@@ -419,13 +441,7 @@ function ArticleDetail({ articleId, onBack }) {
         </span>
       )}
 
-      {author && <p><strong>Autor:</strong> {author}</p>}
-
-      {summary && (
-        <blockquote style={{ borderLeft: '4px solid #0070f3', paddingLeft: '1rem', color: '#555' }}>
-          {summary}
-        </blockquote>
-      )}
+      {author && <p><strong>Autor:</strong> {author.fields?.name || 'Autor desconocido'}</p>}
 
       {/* Renderizado del Rich Text — usa documentToReactComponents */}
       {body ? (
@@ -681,7 +697,7 @@ cd ../webhook-server
 
 ```bash
 # webhook-server/.env
-WEBHOOK_SECRET=mi_secret_super_seguro_2024
+WEBHOOK_SECRET=<WEBHOOK_SECRET>
 PORT=3001
 ```
 
@@ -689,15 +705,20 @@ PORT=3001
 
 ```bash
 # webhook-server/.env.example
-WEBHOOK_SECRET=REEMPLAZAR_CON_TU_SECRET
+WEBHOOK_SECRET=<WEBHOOK_SECRET>
 PORT=3001
 ```
 
 4. Crea el archivo `.gitignore`:
 
 ```bash
-echo ".env" > .gitignore
-echo "node_modules/" >> .gitignore
+# Bash:
+printf ".env\nnode_modules/\n" > .gitignore
+```
+
+```powershell
+# PowerShell:
+@('.env','node_modules/') | Set-Content .gitignore
 ```
 
 5. Crea el archivo principal `server.js`:
@@ -893,7 +914,7 @@ Forwarding  https://xxxx.ngrok-free.app -> http://localhost:3001
 
 | Header | Valor |
 |---|---|
-| `X-Contentful-Webhook-Secret` | `mi_secret_super_seguro_2024` |
+| `X-Contentful-Webhook-Secret` | `<WEBHOOK_SECRET>` |
 
 > ⚠️ **Seguridad:** Este secret debe coincidir exactamente con `WEBHOOK_SECRET` en el `.env` del servidor. En producción, usa un valor aleatorio de al menos 32 caracteres.
 
@@ -908,7 +929,7 @@ Forwarding  https://xxxx.ngrok-free.app -> http://localhost:3001
 ============================================================
 [2024-XX-XX] 📨 Webhook recibido
   Evento:   ContentManagement.Entry.publish
-  Espacio:  tu_space_id
+  Espacio:  <CONTENTFUL_SPACE_ID>
   Entrada:  xxxxxxxxxxxxxxxx
   Tipo:     article
   ✅ ACCIÓN: Invalidando caché para entrada xxxxxxxxxxxxxxxx
@@ -982,11 +1003,11 @@ Forwarding  https://xxxx.ngrok-free.app -> http://localhost:3001
 
 3. Haz clic para expandirla. Verás una lista de versiones numeradas con timestamp y autor.
 
-4. Edita el artículo dos veces más (cambia el título y el resumen en cada edición) y publica cada vez:
+4. Edita el artículo dos veces más (cambia el título y el cuerpo en cada edición) y publica cada vez:
 
    - Versión A: Título original
    - Versión B: Título + "(v2)"
-   - Versión C: Título + "(v3)" + resumen modificado
+- Versión C: Título + "(v3)" + cuerpo modificado
 
 5. Regresa al historial de versiones. Deberías ver al menos 3 versiones.
 
@@ -1013,17 +1034,26 @@ Forwarding  https://xxxx.ngrok-free.app -> http://localhost:3001
 5. Ahora verifica el cambio a través de la API desde la terminal:
 
 ```bash
-# Reemplaza SPACE_ID, ENTRY_ID y ACCESS_TOKEN con tus valores reales
-curl "https://cdn.contentful.com/spaces/SPACE_ID/entries/ENTRY_ID?access_token=ACCESS_TOKEN" \
+# Bash; reemplaza ENTRY_ID y los placeholders
+curl -H "Authorization: Bearer <CONTENTFUL_DELIVERY_TOKEN>" \
+  "https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries/ENTRY_ID" \
   | node -e "
     const chunks = [];
     process.stdin.on('data', c => chunks.push(c));
     process.stdin.on('end', () => {
       const data = JSON.parse(chunks.join(''));
-      console.log('Título actual:', data.fields.title['en-US']);
+      console.log('Título actual:', data.fields.title);
       console.log('Versión sys:', data.sys.revision);
     });
   "
+```
+
+```powershell
+# PowerShell
+$headers = @{ Authorization = 'Bearer <CONTENTFUL_DELIVERY_TOKEN>' }
+$data = Invoke-RestMethod -Headers $headers -Uri 'https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries/ENTRY_ID'
+$data.fields.title
+$data.sys.revision
 ```
 
 6. Verifica que el título corresponde a la versión restaurada y que `sys.revision` ha incrementado (Contentful siempre incrementa el número de revisión, incluso en rollbacks).
@@ -1043,7 +1073,7 @@ Versión sys: 7
 
 ---
 
-## Validación y Pruebas
+## Validación final
 
 ### Lista de verificación final
 
@@ -1067,12 +1097,17 @@ npm run dev
 
 **Bloque 3 — Webhooks:**
 ```bash
-# Prueba de seguridad: secret incorrecto debe devolver 401
-curl -X POST http://localhost:3001/webhook \
+# Bash: secret incorrecto debe devolver 401
+curl -i -X POST http://localhost:3001/webhook \
   -H "Content-Type: application/json" \
   -H "X-Contentful-Webhook-Secret: secret_incorrecto" \
   -d '{"sys":{"id":"test123"}}'
-# Debe responder: {"error":"Secret inválido"} con status 401
+# Criterio observable: status 401 y mensaje de secret inválido
+```
+
+```powershell
+# PowerShell: un status 401 se mostrará como respuesta de error esperada
+Invoke-RestMethod -Method Post -Uri 'http://localhost:3001/webhook' -Headers @{'X-Contentful-Webhook-Secret'='secret_incorrecto'} -ContentType 'application/json' -Body '{"sys":{"id":"test123"}}'
 ```
 - [ ] El servidor responde `401` con secret incorrecto.
 - [ ] El servidor responde `200` con secret correcto.
@@ -1080,9 +1115,15 @@ curl -X POST http://localhost:3001/webhook \
 
 **Bloque 4 — Control de versiones:**
 ```bash
-# Verificar versión actual del artículo via API
-curl "https://cdn.contentful.com/spaces/SPACE_ID/entries/ENTRY_ID?access_token=TOKEN" \
-  | python3 -m json.tool | grep -E '"title"|"revision"'
+# Bash
+curl -H "Authorization: Bearer <CONTENTFUL_DELIVERY_TOKEN>" "https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries/ENTRY_ID" | node -e "let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',()=>{const d=JSON.parse(s);console.log(d.fields.title,d.sys.revision)})"
+```
+
+```powershell
+# PowerShell
+$data = Invoke-RestMethod -Headers @{Authorization='Bearer <CONTENTFUL_DELIVERY_TOKEN>'} -Uri 'https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries/ENTRY_ID'
+$data.fields.title
+$data.sys.revision
 ```
 - [ ] El título refleja la versión restaurada.
 - [ ] `sys.revision` es mayor al esperado (confirma que se creó nueva versión).
@@ -1126,12 +1167,11 @@ Verifica también que el campo `body` en tu Content Type de Contentful sea de ti
 
 **Solución:**
 
-1. Verifica el valor exacto en `.env` (sin espacios ni comillas):
+1. Verifica que la variable existe sin imprimir el secret:
 ```bash
 # En webhook-server/
-cat .env
-# Debe mostrar: WEBHOOK_SECRET=mi_secret_super_seguro_2024
-# SIN comillas, SIN espacios extra
+node -e "require('dotenv').config(); console.log('WEBHOOK_SECRET definido:',Boolean(process.env.WEBHOOK_SECRET),'longitud:',process.env.WEBHOOK_SECRET?.length||0)"
+# Criterio observable: definido=true y longitud mayor que 0
 ```
 
 2. Reinicia el servidor Express para que recargue las variables:
@@ -1173,7 +1213,7 @@ Al finalizar el laboratorio, realiza las siguientes acciones para mantener el en
 # 5. Verificar que los artículos editados están en estado publicado
 # para no afectar las prácticas siguientes
 
-# 6. Hacer commit del trabajo realizado (SIN .env)
+# 6. Opcional: hacer commits locales del trabajo realizado (SIN .env)
 cd portal-noticias
 git add .
 git status  # Verificar que .env NO aparece en la lista
@@ -1207,6 +1247,12 @@ En esta práctica construiste un flujo end-to-end completo que integra Contentfu
 - **Webhooks** permiten desacoplar el CMS del proceso de despliegue, habilitando el patrón de SSG con rebuild automático.
 - **El rollback en Contentful crea una nueva versión** — el historial es inmutable y sirve como registro de auditoría.
 - Las **API Keys de entrega** (solo lectura) son las únicas que pueden usarse en el frontend.
+
+### Preguntas de reflexión
+
+1. ¿Qué criterio usarías para elegir entre CSR, SSR y SSG en este portal?
+2. ¿Qué garantiza un Webhook y qué responsabilidades siguen perteneciendo a la aplicación?
+3. ¿Por qué un rollback crea una nueva versión en lugar de eliminar el historial?
 
 ### Recursos adicionales
 

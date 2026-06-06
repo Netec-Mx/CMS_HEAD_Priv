@@ -20,13 +20,32 @@ En esta práctica crearás desde cero un espacio de trabajo en Contentful y dise
 
 ---
 
+### Escenario de la práctica
+
+Formas parte del equipo que prepara un portal de noticias. Antes de desarrollar el frontend, debes configurar en Contentful una base de contenido reutilizable, publicar ejemplos y comprobar que la Delivery API los expone correctamente.
+
+### Objetivo de la práctica
+
+Dejar listo el espacio de Contentful con el modelo canónico `article`, `category` y `author`, sus relaciones y un conjunto inicial de contenido publicado que se reutilizará durante el resto del curso.
+
+### Cómo trabajar esta práctica
+
+1. Completa los pasos en el orden indicado; los Content Types dependen unos de otros.
+2. Conserva el environment `master` y usa `staging` únicamente cuando el paso lo solicite.
+3. Compara cada configuración con su sección **Resultado esperado**.
+4. No avances al siguiente laboratorio hasta completar la **Validación final**.
+
+> **Importante:** Conserva el espacio, los Content Types y las entradas creadas. Son requisitos para las prácticas 2 a 5.
+
+---
+
 ## 3. Objetivos de Aprendizaje
 
 Al completar este lab serás capaz de:
 
 - [ ] Distinguir las diferencias arquitectónicas entre un CMS tradicional acoplado y un CMS headless, justificando cuándo aplicar cada enfoque.
 - [ ] Crear y configurar un espacio (Space) en Contentful con dos entornos: `master` y `staging`.
-- [ ] Diseñar al menos dos Content Types (`Artículo` y `Categoría`) con campos de distintos tipos y validaciones personalizadas.
+- [ ] Diseñar los tres Content Types canónicos (`article`, `category` y `author`) con sus campos y validaciones.
 - [ ] Publicar entradas (entries) y assets (imágenes) siguiendo el ciclo de vida `draft → published`.
 - [ ] Explorar la respuesta JSON de la Delivery API para verificar que el modelo y las entradas publicadas son accesibles correctamente.
 
@@ -126,7 +145,7 @@ Abre cada URL en el navegador y verifica que no hay bloqueos de firewall o proxy
    - **Editor de contenido:** creas y publicas entradas en la interfaz web.
    - **Desarrollador consumidor:** consultas la API para verificar que el contenido está disponible.
 
-#### Salida esperada
+#### Resultado esperado
 
 Comprensión clara de que en este lab modelarás el **backend de contenido** (Contentful) y al final actuarás como un frontend que consume su API, sin que ambas capas estén acopladas.
 
@@ -167,7 +186,7 @@ Responde en voz alta o por escrito: *"En Contentful, cuando publico un artículo
    Space ID: xxxxxxxxxxxx   ← cópialo aquí en tu bloc de notas
    ```
 
-#### Salida esperada
+#### Resultado esperado
 
 Un espacio vacío llamado `portal-noticias-curso` visible en el dashboard de Contentful, con el entorno `master` creado automáticamente.
 
@@ -208,9 +227,9 @@ Navega a **Settings → General settings** y confirma que:
 
 6. **Vuelve al entorno `master`** para los pasos siguientes: haz clic en el selector de entornos (parte superior de la barra lateral) y selecciona `master`.
 
-> **Nota:** En este lab trabajarás exclusivamente en `master`. El entorno `staging` se usará en labs posteriores para probar cambios de modelo antes de promoverlos a producción.
+> **Nota:** El contrato técnico del curso usa exclusivamente el environment `master`. Conserva `staging` como referencia conceptual, pero no lo selecciones en los laboratorios posteriores.
 
-#### Salida esperada
+#### Resultado esperado
 
 Dos entornos visibles en **Settings → Environments**: `master` y `staging`.
 
@@ -220,9 +239,9 @@ Confirma que el selector de entornos en la barra lateral muestra `master` como e
 
 ---
 
-### Paso 4 — Crear el Content Type `Categoría` (12 min)
+### Paso 4 — Crear los Content Types `category` y `author` (12 min)
 
-**Objetivo:** Diseñar el Content Type más simple primero, ya que `Artículo` lo referenciará.
+**Objetivo:** Diseñar primero los Content Types referenciados por `article`.
 
 #### Instrucciones
 
@@ -230,17 +249,17 @@ Confirma que el selector de entornos en la barra lateral muestra `master` como e
 
 2. Haz clic en **"Add content type"**.
 
-3. Completa el formulario inicial:
+3. Crea el Content Type de categoría:
 
    | Campo           | Valor                                        |
    |-----------------|----------------------------------------------|
-   | Name            | `Categoría`                                  |
-   | API Identifier  | `categoria` (Contentful lo genera automáticamente; verifica que sea exactamente `categoria` en minúsculas) |
+   | Name            | `Category`                                   |
+   | API Identifier  | `category`                                   |
    | Description     | `Categorías temáticas del portal de noticias` |
 
 4. Haz clic en **"Create"**.
 
-5. Ahora añadirás los campos. Haz clic en **"Add field"** para cada uno:
+5. Añade los siguientes campos:
 
    **Campo 1 — Nombre:**
 
@@ -248,7 +267,7 @@ Confirma que el selector de entornos en la barra lateral muestra `master` como e
    |------------------|------------------------|
    | Field type       | Short text             |
    | Name             | `Nombre`               |
-   | Field ID         | `nombre`               |
+   | Field ID         | `name`               |
 
    - Después de crearlo, haz clic en el campo y activa **"Required field"**.
    - En la pestaña **"Validations"**, activa **"Unique field"** para evitar categorías duplicadas.
@@ -260,44 +279,50 @@ Confirma que el selector de entornos en la barra lateral muestra `master` como e
    |------------------|------------------------|
    | Field type       | Long text              |
    | Name             | `Descripción`          |
-   | Field ID         | `descripcion`          |
+   | Field ID         | `description`          |
 
    - No es obligatorio. Haz clic en **"Confirm"**.
 
-   **Campo 3 — Color:**
+   **Campo 3 — Slug:**
 
    | Propiedad        | Valor                  |
    |------------------|------------------------|
    | Field type       | Short text             |
-   | Name             | `Color`                |
-   | Field ID         | `color`                |
+   | Name             | `Slug`                 |
+   | Field ID         | `slug`                 |
 
-   - En la pestaña **"Validations"**, activa **"Match a specific pattern"** e introduce el patrón:
-     ```
-     ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
-     ```
-   - En el campo **"Custom error message"** escribe: `Debe ser un código hexadecimal válido (ej: #FF5733)`
+   - Activa **"Required field"** y **"Unique field"**.
+   - En **Validations → Match a specific pattern**, usa `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
    - Haz clic en **"Confirm"**.
 
-6. Haz clic en **"Save"** (botón azul en la esquina superior derecha) para guardar el Content Type.
+6. Guarda y activa el Content Type `category`.
 
-7. Haz clic en **"Activate"** para activar el Content Type y que pueda recibir entradas.
+7. Crea el Content Type `Author` con API Identifier `author` y estos campos:
 
-#### Salida esperada
+   | Name | Field ID | Field type | Configuración |
+   |---|---|---|---|
+   | Nombre | `name` | Short text | Required |
+   | Slug | `slug` | Short text | Required, Unique, patrón `^[a-z0-9]+(?:-[a-z0-9]+)*$` |
+   | Biografía | `bio` | Long text | Opcional |
+   | Avatar | `avatar` | Media | Opcional, solo imágenes |
 
-El Content Type `Categoría` aparece en el listado de **Content model** con 3 campos: `nombre` (obligatorio, único), `descripcion` y `color` (con validación de patrón hexadecimal).
+8. Guarda y activa el Content Type `author`.
+
+#### Resultado esperado
+
+Los Content Types `category` y `author` aparecen activos con los campos definidos en el contrato técnico del curso.
 
 #### Verificación
 
-- Haz clic en el Content Type `Categoría` y confirma que los 3 campos aparecen en la lista.
-- Verifica que el campo `nombre` tiene el ícono de candado (obligatorio) y el ícono de unicidad.
-- Verifica que el API Identifier del tipo es `categoria`.
+- Verifica que `category` contiene exactamente `name`, `slug` y `description`.
+- Verifica que `author` contiene exactamente `name`, `slug`, `bio` y `avatar`.
+- Confirma que los API Identifiers son `category` y `author`.
 
 ---
 
-### Paso 5 — Crear el Content Type `Artículo` (15 min)
+### Paso 5 — Crear el Content Type `article` (15 min)
 
-**Objetivo:** Diseñar el Content Type principal del portal, con campos de múltiples tipos incluyendo una referencia a `Categoría`.
+**Objetivo:** Diseñar el Content Type principal del portal con referencias a `category` y `author`.
 
 #### Instrucciones
 
@@ -307,8 +332,8 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
 
    | Campo           | Valor                                           |
    |-----------------|-------------------------------------------------|
-   | Name            | `Artículo`                                      |
-   | API Identifier  | `articulo`                                      |
+   | Name            | `Article`                                       |
+   | API Identifier  | `article`                                      |
    | Description     | `Artículos de noticias del portal`              |
 
 3. Haz clic en **"Create"** y añade los siguientes campos:
@@ -319,7 +344,7 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
    |------------------|------------------------|
    | Field type       | Short text             |
    | Name             | `Título`               |
-   | Field ID         | `titulo`               |
+   | Field ID         | `title`               |
 
    - Activa **"Required field"**.
    - En **Validations**, establece **"Limit character count"**: mínimo `5`, máximo `120`.
@@ -339,7 +364,7 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
      ```
      ^[a-z0-9]+(?:-[a-z0-9]+)*$
      ```
-   - Custom error message: `Solo letras minúsculas, números y guiones (ej: mi-articulo-2024)`
+   - Custom error message: `Solo letras minúsculas, números y guiones (ej: mi-article-2024)`
    - En **Validations → Limit character count**: máximo `80`.
    - Haz clic en **"Confirm"**.
 
@@ -349,7 +374,7 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
    |------------------|------------------------|
    | Field type       | Rich text              |
    | Name             | `Cuerpo`               |
-   | Field ID         | `cuerpo`               |
+   | Field ID         | `body`               |
 
    - Activa **"Required field"**.
    - Haz clic en **"Confirm"**.
@@ -362,7 +387,7 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
    |------------------|------------------------|
    | Field type       | Date and time          |
    | Name             | `Fecha de publicación` |
-   | Field ID         | `fechaPublicacion`     |
+   | Field ID         | `publishedAt`     |
 
    - Activa **"Required field"**.
    - Haz clic en **"Confirm"**.
@@ -373,7 +398,7 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
    |------------------|------------------------|
    | Field type       | Media                  |
    | Name             | `Imagen destacada`     |
-   | Field ID         | `imagenDestacada`      |
+   | Field ID         | `coverImage`      |
 
    - En **Validations**, activa **"Accept only specified file types"** y selecciona únicamente **"Images"**.
    - Activa **"Required field"**.
@@ -385,52 +410,53 @@ El Content Type `Categoría` aparece en el listado de **Content model** con 3 ca
    |------------------|------------------------|
    | Field type       | Reference              |
    | Name             | `Categoría`            |
-   | Field ID         | `categoria`            |
+   | Field ID         | `category`            |
 
    - Activa **"Required field"**.
-   - En **Validations → Accept only specified entry type**, selecciona **"Categoría"** (el Content Type que creaste en el Paso 4).
+   - En **Validations → Accept only specified entry type**, selecciona `category`.
    - Haz clic en **"Confirm"**.
 
-   **Campo 7 — Destacado:**
+   **Campo 7 — Autor (referencia):**
 
    | Propiedad        | Valor                  |
    |------------------|------------------------|
-   | Field type       | Boolean                |
-   | Name             | `Destacado`            |
-   | Field ID         | `destacado`            |
+   | Field type       | Reference              |
+   | Name             | `Autor`                |
+   | Field ID         | `author`               |
 
-   - En **Appearance**, establece las etiquetas: `True label: Sí` / `False label: No`.
+   - Activa **"Required field"**.
+   - En **Validations → Accept only specified entry type**, selecciona `author`.
    - Haz clic en **"Confirm"**.
 
 4. Haz clic en **"Save"** y luego en **"Activate"**.
 
-#### Salida esperada
+#### Resultado esperado
 
-El Content Type `Artículo` aparece en el listado con 7 campos. El campo `categoria` muestra el ícono de referencia apuntando al tipo `Categoría`.
+El Content Type `article` aparece en el listado con 7 campos. Los campos `category` y `author` muestran referencias a sus Content Types correspondientes.
 
 #### Verificación
 
-Revisa el diagrama de relaciones en Content model: deberías ver una línea que conecta `Artículo` → `Categoría`. Confirma que los campos obligatorios (`titulo`, `slug`, `cuerpo`, `fechaPublicacion`, `imagenDestacada`, `categoria`) tienen el indicador visual de requerido.
+Revisa el diagrama de relaciones en Content model: debes ver `article` → `category` y `article` → `author`. Confirma que los siete campos canónicos existen.
 
 ---
 
-### Paso 6 — Publicar entradas de `Categoría` (8 min)
+### Paso 6 — Publicar entradas de `category` y `author` (8 min)
 
-**Objetivo:** Crear y publicar las categorías antes de los artículos, ya que los artículos las referencian.
+**Objetivo:** Crear y publicar las categorías y el autor antes de los artículos, ya que los artículos los referencian.
 
 #### Instrucciones
 
 1. En la barra lateral, haz clic en **"Content"**.
 
-2. Haz clic en **"Add entry"** → selecciona **"Categoría"**.
+2. Haz clic en **"Add entry"** → selecciona **"Category"**.
 
 3. Crea la primera categoría con los siguientes datos:
 
    | Campo        | Valor                                                   |
    |--------------|---------------------------------------------------------|
    | Nombre       | `Tecnología`                                            |
+   | Slug         | `tecnologia`                                            |
    | Descripción  | `Noticias sobre innovación, software y hardware`        |
-   | Color        | `#0066CC`                                               |
 
 4. Haz clic en **"Publish"** (botón verde en la esquina superior derecha). El estado cambiará de `Draft` a `Published`.
 
@@ -439,19 +465,28 @@ Revisa el diagrama de relaciones en Content model: deberías ver una línea que 
    | Campo        | Valor                                                   |
    |--------------|---------------------------------------------------------|
    | Nombre       | `Ciencia`                                               |
+   | Slug         | `ciencia`                                               |
    | Descripción  | `Descubrimientos científicos y avances en investigación`|
-   | Color        | `#00AA44`                                               |
 
 6. Publica también esta segunda categoría.
 
-#### Salida esperada
+7. Crea y publica una entrada de `Author`:
 
-En la vista **Content**, filtrada por tipo **Categoría**, aparecen 2 entradas con estado `Published` (ícono verde).
+   | Campo | Valor |
+   |---|---|
+   | Nombre | `Ana García` |
+   | Slug | `ana-garcia` |
+   | Biografía | `Autora principal del portal de noticias` |
+   | Avatar | Opcional |
+
+#### Resultado esperado
+
+En la vista **Content** aparecen 2 entradas de `category` y 1 entrada de `author` con estado `Published`.
 
 #### Verificación
 
-- Haz clic en la categoría `Tecnología` y verifica que el campo `Color` muestra `#0066CC` sin errores de validación.
 - Confirma que ambas entradas muestran el estado **Published** en la columna de estado.
+- Confirma que la entrada `Ana García` está publicada y tiene slug `ana-garcia`.
 
 ---
 
@@ -479,7 +514,7 @@ En la vista **Content**, filtrada por tipo **Categoría**, aparecen 2 entradas c
 
 > **Consejo:** Contentful procesa las imágenes y genera múltiples resoluciones automáticamente. El procesamiento puede tardar 5–15 segundos por imagen.
 
-#### Salida esperada
+#### Resultado esperado
 
 3 assets publicados visibles en la vista **Media**, cada uno con una URL de imagen funcional.
 
@@ -492,13 +527,13 @@ https://images.ctfassets.net/{spaceId}/{assetId}/{token}/nombre-imagen.jpg
 
 ---
 
-### Paso 8 — Publicar entradas de `Artículo` (12 min)
+### Paso 8 — Publicar entradas de `article` (12 min)
 
-**Objetivo:** Crear y publicar 3 artículos que referencien las categorías y assets creados previamente.
+**Objetivo:** Crear y publicar 3 artículos que referencien las categorías, el autor y los assets creados previamente.
 
 #### Instrucciones
 
-1. En **Content**, haz clic en **"Add entry"** → **"Artículo"**.
+1. En **Content**, haz clic en **"Add entry"** → **"Article"**.
 
 2. Crea el **primer artículo**:
 
@@ -510,7 +545,7 @@ https://images.ctfassets.net/{spaceId}/{assetId}/{token}/nombre-imagen.jpg
    | Fecha de publicación | Selecciona la fecha de hoy                                           |
    | Imagen destacada     | Selecciona `Imagen artículo tecnología 1`                            |
    | Categoría            | Selecciona `Tecnología`                                              |
-   | Destacado            | `Sí` (true)                                                          |
+   | Autor                | Selecciona `Ana García`                                              |
 
 3. Haz clic en **"Publish"**.
 
@@ -524,7 +559,7 @@ https://images.ctfassets.net/{spaceId}/{assetId}/{token}/nombre-imagen.jpg
    | Fecha de publicación | Fecha de ayer                                                        |
    | Imagen destacada     | Selecciona `Imagen artículo tecnología 2`                            |
    | Categoría            | Selecciona `Tecnología`                                              |
-   | Destacado            | `No` (false)                                                         |
+   | Autor                | Selecciona `Ana García`                                              |
 
 5. Haz clic en **"Publish"**.
 
@@ -538,18 +573,19 @@ https://images.ctfassets.net/{spaceId}/{assetId}/{token}/nombre-imagen.jpg
    | Fecha de publicación | Fecha de hace 3 días                                                 |
    | Imagen destacada     | Selecciona `Imagen artículo ciencia 1`                               |
    | Categoría            | Selecciona `Ciencia`                                                 |
-   | Destacado            | `No` (false)                                                         |
+   | Autor                | Selecciona `Ana García`                                              |
 
 7. Haz clic en **"Publish"**.
 
-#### Salida esperada
+#### Resultado esperado
 
-En la vista **Content** filtrada por tipo **Artículo**, aparecen 3 entradas con estado `Published`.
+En la vista **Content** filtrada por tipo **Article**, aparecen 3 entradas con estado `Published`.
 
 #### Verificación
 
 - Verifica que los 3 artículos muestran estado `Published`.
 - Abre el primer artículo y confirma que el campo `Categoría` muestra el enlace a la entrada `Tecnología` (no un ID vacío).
+- Confirma que el campo `Autor` muestra el enlace a la entrada `Ana García`.
 - Confirma que el campo `Cuerpo` muestra el contenido Rich Text con formato visual en el editor.
 
 ---
@@ -576,8 +612,10 @@ En la vista **Content** filtrada por tipo **Artículo**, aparecen 3 entradas con
 5. En la pantalla de detalle de la API Key, anota los siguientes valores en tu bloc de notas:
 
    ```
-   Space ID:              xxxxxxxxxxxx   (mismo que anotaste en el Paso 2)
-   Content Delivery API - access token:  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   Space ID:              <CONTENTFUL_SPACE_ID>
+   Content Delivery API - access token:  <CONTENTFUL_DELIVERY_TOKEN>
+   Content Preview API - access token:   <CONTENTFUL_PREVIEW_TOKEN>
+   Environment:           <CONTENTFUL_ENVIRONMENT> (usar master)
    ```
 
 > ⚠️ **Seguridad crítica:** Aunque la Content Delivery API Key es de solo lectura y puede usarse en frontends públicos, **nunca la expongas en repositorios Git**. En los labs siguientes usarás un archivo `.env` para manejarla. Por ahora, guárdala únicamente en tu bloc de notas local.
@@ -587,7 +625,7 @@ En la vista **Content** filtrada por tipo **Artículo**, aparecen 3 entradas con
 > - **Content Preview API Key** — Solo lectura. Para borradores (draft). Solo en entornos de preview.
 > - **Content Management API Key** — Lectura y escritura. **NUNCA en frontends ni en repositorios públicos.**
 
-#### Salida esperada
+#### Resultado esperado
 
 Una API Key creada con su `access token` visible y anotado.
 
@@ -614,11 +652,11 @@ Confirma que en la pantalla de la API Key puedes ver dos tokens: el de **Content
    | Propiedad    | Valor                                                                                      |
    |--------------|--------------------------------------------------------------------------------------------|
    | Method       | `GET`                                                                                      |
-   | URL          | `https://cdn.contentful.com/spaces/{SPACE_ID}/environments/master/entries`                |
-   | Query Params | `content_type` = `articulo` |
-   | Query Params | `access_token` = `{TU_DELIVERY_TOKEN}` |
+   | URL          | `https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries`                |
+   | Query Params | `content_type` = `article` |
+   | Query Params | `access_token` = `<CONTENTFUL_DELIVERY_TOKEN>` |
 
-   Reemplaza `{SPACE_ID}` y `{TU_DELIVERY_TOKEN}` con los valores anotados en el Paso 9.
+   Reemplaza `<CONTENTFUL_SPACE_ID>` y `<CONTENTFUL_DELIVERY_TOKEN>` con los valores anotados en el Paso 9.
 
    Haz clic en **"Send"** y observa la respuesta.
 
@@ -636,21 +674,23 @@ Confirma que en la pantalla de la API Key puedes ver dos tokens: el de **Content
            "id": "xxxxxxxx",
            "type": "Entry",
            "contentType": {
-             "sys": { "id": "articulo" }
+            "sys": { "id": "article" }
            }
          },
          "fields": {
-           "titulo": "La inteligencia artificial transforma el desarrollo de software",
+          "title": "La inteligencia artificial transforma el desarrollo de software",
            "slug": "ia-transforma-desarrollo-software",
-           "cuerpo": {
+          "body": {
              "nodeType": "document",
              "content": [ ... ]
            },
-           "fechaPublicacion": "2024-06-01T00:00:00",
-           "destacado": true,
-           "categoria": {
-             "sys": { "type": "Link", "linkType": "Entry", "id": "yyyyyyyy" }
-           }
+          "publishedAt": "2024-06-01T00:00:00",
+          "category": {
+            "sys": { "type": "Link", "linkType": "Entry", "id": "yyyyyyyy" }
+          },
+          "author": {
+            "sys": { "type": "Link", "linkType": "Entry", "id": "yyyyyyyy" }
+          }
          }
        }
      ],
@@ -658,9 +698,9 @@ Confirma que en la pantalla de la API Key puedes ver dos tokens: el de **Content
    }
    ```
 
-   > **Observa:** El campo `cuerpo` (Rich Text) **no es HTML**. Es un objeto JSON con `nodeType: "document"` y un array `content` con nodos anidados. Este es el comportamiento no intuitivo advertido en la descripción del lab.
+   > **Observa:** El campo `body` (Rich Text) **no es HTML**. Es un objeto JSON con `nodeType: "document"` y un array `content` con nodos anidados. Este es el comportamiento no intuitivo advertido en la descripción del lab.
 
-   > **Observa también:** El campo `categoria` no contiene los datos de la categoría directamente; contiene un objeto `Link` con el `id` de la entrada referenciada. Los datos completos de la categoría aparecen en el objeto `includes.Entry` al final de la respuesta.
+   > **Observa también:** El campo `category` no contiene los datos de la categoría directamente; contiene un objeto `Link` con el `id` de la entrada referenciada. Los datos completos de la categoría aparecen en el objeto `includes.Entry` al final de la respuesta.
 
 5. **Consulta 2: Obtener un artículo específico por slug**
 
@@ -669,10 +709,10 @@ Confirma que en la pantalla de la API Key puedes ver dos tokens: el de **Content
    | Propiedad    | Valor                                                                                      |
    |--------------|--------------------------------------------------------------------------------------------|
    | Method       | `GET`                                                                                      |
-   | URL          | `https://cdn.contentful.com/spaces/{SPACE_ID}/environments/master/entries`                |
-   | Query Params | `content_type` = `articulo` |
+   | URL          | `https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries`                |
+   | Query Params | `content_type` = `article` |
    | Query Params | `fields.slug` = `ia-transforma-desarrollo-software` |
-   | Query Params | `access_token` = `{TU_DELIVERY_TOKEN}` |
+   | Query Params | `access_token` = `<CONTENTFUL_DELIVERY_TOKEN>` |
 
    Verifica que la respuesta retorna exactamente **1 item** correspondiente al artículo con ese slug.
 
@@ -683,15 +723,15 @@ Confirma que en la pantalla de la API Key puedes ver dos tokens: el de **Content
    | Propiedad    | Valor                                                                                      |
    |--------------|--------------------------------------------------------------------------------------------|
    | Method       | `GET`                                                                                      |
-   | URL          | `https://cdn.contentful.com/spaces/{SPACE_ID}/environments/master/entries`                |
-   | Query Params | `content_type` = `categoria` |
-   | Query Params | `access_token` = `{TU_DELIVERY_TOKEN}` |
+   | URL          | `https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries`                |
+   | Query Params | `content_type` = `category` |
+   | Query Params | `access_token` = `<CONTENTFUL_DELIVERY_TOKEN>` |
 
    Verifica que retorna **2 items** (Tecnología y Ciencia).
 
 7. Guarda las 3 requests en la colección `Contentful - Portal Noticias`.
 
-#### Salida esperada
+#### Resultado esperado
 
 Tres requests exitosas con status `200 OK`:
 - La primera retorna `"total": 3` artículos.
@@ -704,7 +744,7 @@ En la respuesta de la Consulta 1, expande el objeto `includes.Entry` y confirma 
 
 ---
 
-## 7. Validación y Pruebas
+## 7. Validación final
 
 Ejecuta la siguiente lista de verificación completa antes de dar el lab por terminado:
 
@@ -714,22 +754,22 @@ Ejecuta la siguiente lista de verificación completa antes de dar el lab por ter
 |---|------------------------------------------------------------------------------|--------------------|
 | 1 | El espacio `portal-noticias-curso` existe en Contentful                     | ✅ Visible en dashboard |
 | 2 | Existen dos entornos: `master` y `staging`                                  | ✅ En Settings → Environments |
-| 3 | El Content Type `Categoría` tiene 3 campos con sus validaciones             | ✅ `nombre` obligatorio/único, `color` con regex |
-| 4 | El Content Type `Artículo` tiene 7 campos con sus validaciones              | ✅ `slug` con regex y longitud máx, referencia a `Categoría` |
-| 5 | Existen 2 entradas de `Categoría` publicadas                                | ✅ Estado `Published` |
+| 3 | Los Content Types `category` y `author` tienen los campos canónicos         | ✅ API IDs y Field IDs exactos |
+| 4 | El Content Type `article` tiene 7 campos canónicos                          | ✅ Referencias a `category` y `author` |
+| 5 | Existen 2 categorías y 1 autor publicados                                   | ✅ Estado `Published` |
 | 6 | Existen 3 assets de imagen publicados                                       | ✅ Estado `Published` en Media |
-| 7 | Existen 3 entradas de `Artículo` publicadas con todos los campos completos  | ✅ Estado `Published` |
+| 7 | Existen 3 entradas de `article` publicadas con todos los campos completos   | ✅ Estado `Published` |
 | 8 | La Delivery API retorna los 3 artículos con status 200                      | ✅ `"total": 3` en Postman |
-| 9 | El campo `cuerpo` en la respuesta JSON es un objeto `Document`, no HTML     | ✅ `"nodeType": "document"` |
-| 10 | El campo `categoria` en la respuesta es un `Link`, no los datos directos   | ✅ `"type": "Link"` en `sys` |
+| 9 | El campo `body` en la respuesta JSON es un objeto `Document`, no HTML     | ✅ `"nodeType": "document"` |
+| 10 | El campo `category` en la respuesta es un `Link`, no los datos directos   | ✅ `"type": "Link"` en `sys` |
 
 ### Prueba de validación de campos (opcional, +5 min)
 
 Para confirmar que las validaciones funcionan:
 
-1. Intenta crear una nueva entrada de `Artículo` con un slug que contenga mayúsculas, por ejemplo: `Mi-Articulo-Invalido`.
+1. Intenta crear una nueva entrada de `Article` con un slug que contenga mayúsculas, por ejemplo: `Mi-Article-Invalido`.
 2. Intenta publicarla. Contentful debe mostrar un error de validación indicando que el slug no cumple el patrón.
-3. Intenta crear una entrada de `Categoría` con `Color` = `rojo` (sin `#`). Verifica que aparece el mensaje de error personalizado: *"Debe ser un código hexadecimal válido"*.
+3. Intenta crear una entrada de `Author` con un slug repetido. Contentful debe impedir publicarla por la validación de unicidad.
 4. Elimina estas entradas de prueba sin publicarlas.
 
 ---
@@ -755,7 +795,7 @@ Para confirmar que las validaciones funcionan:
 3. Copia el token del campo **"Content Delivery API - access token"** (no el de Preview ni el de Management).
 4. En Postman, actualiza el valor del query param `access_token` con el token recién copiado.
 5. Asegúrate de que no hay espacios antes o después del token.
-6. Verifica también que el `{SPACE_ID}` en la URL corresponde al Space ID de tu espacio (visible en **Settings → General settings**).
+6. Verifica también que el `<CONTENTFUL_SPACE_ID>` en la URL corresponde al Space ID de tu espacio (visible en **Settings → General settings**).
 
 ---
 
@@ -763,11 +803,11 @@ Para confirmar que las validaciones funcionan:
 
 **Síntoma:** La request a la Delivery API retorna status `200 OK` pero el cuerpo de la respuesta muestra `"total": 0` y el array `items` está vacío, a pesar de que las entradas son visibles en la interfaz web de Contentful.
 
-**Causa:** Las entradas están en estado `Draft` (borrador) y no han sido publicadas. La **Content Delivery API** solo expone contenido en estado **Published**. Alternativamente, el parámetro `content_type` puede estar mal escrito (diferencia entre `articulo` y `Artículo`).
+**Causa:** Las entradas están en estado `Draft` (borrador) y no han sido publicadas. La **Content Delivery API** solo expone contenido en estado **Published**. Alternativamente, el parámetro `content_type` puede estar mal escrito (diferencia entre `article` y `Artículo`).
 
 **Solución:**
 1. Ve a **Content** en Contentful y verifica que las entradas muestran el estado `Published` (ícono verde). Si muestran `Draft` (ícono gris), abre cada entrada y haz clic en **"Publish"**.
-2. Verifica el valor del query param `content_type` en Postman: debe ser exactamente `articulo` (el API Identifier del Content Type, en minúsculas, sin acento), no `Artículo`.
+2. Verifica el valor del query param `content_type` en Postman: debe ser exactamente `article` (el API Identifier del Content Type, en minúsculas, sin acento), no `Artículo`.
 3. Si acabas de publicar las entradas, espera 10–15 segundos y reintenta la consulta (la Delivery API tiene un caché con TTL corto).
 4. Si el problema persiste, verifica que el entorno en la URL de la API es `master` y no `staging`.
 
@@ -797,9 +837,11 @@ Para confirmar que las validaciones funcionan:
 | Espacio `portal-noticias-curso` | ✅ Activo, conservar |
 | Entorno `master`           | ✅ Activo, conservar |
 | Entorno `staging`          | ✅ Activo, conservar |
-| Content Type `Categoría`   | ✅ Activo, conservar |
-| Content Type `Artículo`    | ✅ Activo, conservar |
+| Content Type `category`    | ✅ Activo, conservar |
+| Content Type `author`      | ✅ Activo, conservar |
+| Content Type `article`     | ✅ Activo, conservar |
 | 2 entradas de Categoría    | ✅ Published, conservar |
+| 1 entrada de Autor         | ✅ Published, conservar |
 | 3 assets de imagen         | ✅ Published, conservar |
 | 3 entradas de Artículo     | ✅ Published, conservar |
 | API Key `Lab01 - Delivery Key` | ✅ Activa, conservar |
@@ -814,8 +856,8 @@ En este lab realizaste el ciclo completo de modelado y publicación de contenido
 
 1. **Reflexionaste** sobre la diferencia arquitectónica entre CMS tradicional y headless, comprendiendo que Contentful nunca genera HTML sino que expone JSON a través de su API.
 2. **Creaste un espacio** de trabajo con dos entornos (`master` y `staging`), simulando un flujo de trabajo profesional con separación entre producción y pre-producción.
-3. **Diseñaste dos Content Types** (`Categoría` y `Artículo`) con campos de distintos tipos (texto corto, texto largo, Rich Text, fecha, media, referencia, booleano) y validaciones personalizadas (obligatorio, único, patrón regex, longitud máxima).
-4. **Publicaste contenido real**: 2 categorías, 3 assets de imagen y 3 artículos, siguiendo el ciclo de vida `draft → published`.
+3. **Diseñaste tres Content Types** (`category`, `author` y `article`) con campos de distintos tipos y validaciones personalizadas.
+4. **Publicaste contenido real**: 2 categorías, 1 autor, 3 assets de imagen y 3 artículos, siguiendo el ciclo de vida `draft → published`.
 5. **Validaste la API** consultando la Delivery API desde Postman y observando la estructura JSON resultante, incluyendo el comportamiento no intuitivo del campo Rich Text (árbol `Document`) y las referencias (objeto `Link`).
 
 ### Conceptos clave reforzados
@@ -823,7 +865,7 @@ En este lab realizaste el ciclo completo de modelado y publicación de contenido
 | Concepto                        | Aplicación en este lab                                               |
 |---------------------------------|----------------------------------------------------------------------|
 | CMS headless vs tradicional     | Contentful no genera HTML; el frontend consume JSON de su API        |
-| Content Type                    | Plantilla de estructura para un tipo de contenido (`Artículo`, `Categoría`) |
+| Content Type                    | Plantilla de estructura para un tipo de contenido (`article`, `category`, `author`) |
 | Entry                           | Instancia concreta de un Content Type con datos reales              |
 | Asset                           | Archivo multimedia (imagen) gestionado por Contentful               |
 | Draft → Published               | Ciclo de vida del contenido; solo `Published` es visible en la Delivery API |
@@ -836,8 +878,14 @@ En este lab realizaste el ciclo completo de modelado y publicación de contenido
 En el **Lab 02** comenzarás a consumir este mismo modelo de contenido usando el **SDK de JavaScript de Contentful (v10.x)** desde Node.js. Aprenderás a:
 - Instalar y configurar el SDK.
 - Realizar consultas con filtros y paginación.
-- Manejar errores y respetar el rate limiting de la API (7 requests/segundo en el plan Community).
+- Manejar errores y respetar los límites vigentes de la API usando respuestas `429` y headers de reintento.
 - Gestionar las API Keys de forma segura mediante variables de entorno (`.env`).
+
+### Preguntas de reflexión
+
+1. ¿Qué ventajas aporta modelar `author` y `category` como Content Types separados de `article`?
+2. ¿Qué diferencia práctica observaste entre guardar una entrada como borrador y publicarla?
+3. ¿Por qué el campo `body` se entrega como un documento JSON en lugar de HTML?
 
 ### Recursos adicionales
 
@@ -851,4 +899,4 @@ En el **Lab 02** comenzarás a consumir este mismo modelo de contenido usando el
 
 ---
 
-> **Recuerda para los próximos labs:** El espacio, el modelo de contenido y las entradas que creaste hoy son la base de todos los laboratorios del curso. Si por algún motivo necesitas recriar el espacio, el instructor proporcionará un script de importación con `contentful-cli` que configurará automáticamente el entorno con datos de ejemplo.
+> **Recuerda para los próximos labs:** El espacio, el modelo de contenido y las entradas que creaste hoy son la base de todos los laboratorios del curso. Conserva este estado y completa la práctica antes de continuar.

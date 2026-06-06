@@ -1,6 +1,3 @@
----LAB_START---
-LAB_ID: 03-00-01
----MARKDOWN---
 # Implementar consultas GraphQL optimizadas
 
 ## Metadatos
@@ -21,6 +18,25 @@ En esta práctica construirás un módulo Node.js que consume la API GraphQL de 
 
 ---
 
+### Escenario de la práctica
+
+El equipo necesita reducir el over-fetching del portal y evaluar cómo cambian el rendimiento, la caché y la seguridad al consultar el mismo contenido mediante GraphQL.
+
+### Objetivo de la práctica
+
+Implementar un cliente GraphQL para el modelo canónico, construir consultas progresivas y comparar sus resultados con REST usando mediciones y validaciones reproducibles.
+
+### Cómo trabajar esta práctica
+
+1. Reutiliza el espacio, el environment y las entradas publicadas en las prácticas anteriores.
+2. Ejecuta las consultas de menor a mayor complejidad y valida cada resultado antes de continuar.
+3. Registra las métricas obtenidas en tu entorno; pueden variar respecto a los ejemplos.
+4. Comprueba los nombres generados por el schema antes de diagnosticar una consulta como incorrecta.
+
+> **Nota:** Los tamaños de payload y estados de caché dependen del contenido y del momento de ejecución. Evalúa la tendencia y documenta tus resultados reales.
+
+---
+
 ## Objetivos de Aprendizaje
 
 Al completar esta práctica serás capaz de:
@@ -37,15 +53,12 @@ Al completar esta práctica serás capaz de:
 
 ### Conocimiento previo
 
-- Haber completado la **Práctica 1** (modelo de contenido con Content Types `Article`, `Category` y `Author`) y la **Práctica 2** (módulo Node.js con SDK REST funcional)
+- Haber completado la **Práctica 1** (modelo canónico con Content Types `article`, `category` y `author`) y la **Práctica 2** (módulo Node.js con SDK REST funcional)
 - Conocimiento introductorio de GraphQL: qué es una query, qué es un schema, diferencia con REST
 - Comprensión de HTTP headers (`Content-Type`, `Authorization`, `Cache-Control`)
 - Familiaridad con `async/await` y `fetch` en Node.js 18+
 
-> **⚠️ Si no completaste la Práctica 1**, ejecuta el script de importación provisto por el instructor antes de continuar:
-> ```bash
-> contentful space import --space-id TU_SPACE_ID --content-file lab01-seed.json
-> ```
+> **Prerrequisito obligatorio:** Completa las Prácticas 1 y 2 antes de continuar. Este laboratorio depende del modelo canónico y de sus entradas publicadas en el environment `master`. En esta fase no se proporciona un archivo seed alternativo.
 
 ### Acceso y herramientas
 
@@ -57,6 +70,8 @@ Al completar esta práctica serás capaz de:
 - Acceso a internet estable (mínimo 10 Mbps)
 
 > **🔐 Recordatorio de seguridad crítico:** La **Content Delivery API Key** es de solo lectura y puede usarse en este módulo. La **Content Management API Key** tiene permisos de escritura y **NUNCA debe aparecer en código de frontend ni commitearse en Git**. Revisa tu `.gitignore` antes de cualquier commit.
+
+> **Compatibilidad de terminal:** Los comandos de Node.js, npm y Git son portables. Los bloques con heredoc, pipes o utilidades Unix se identifican como Bash e incluyen alternativa PowerShell cuando son necesarios para la práctica.
 
 ---
 
@@ -128,6 +143,7 @@ npm install graphql-request dotenv
 3. Crea el archivo `.gitignore` **antes de cualquier commit** (paso obligatorio):
 
 ```bash
+# Bash:
 cat > .gitignore << 'EOF'
 node_modules/
 .env
@@ -137,27 +153,42 @@ dist/
 EOF
 ```
 
+```powershell
+# PowerShell:
+@'
+node_modules/
+.env
+*.log
+dist/
+.DS_Store
+'@ | Set-Content .gitignore
+```
+
 4. Crea el archivo `.env.example` como plantilla documentada:
 
-```bash
-cat > .env.example << 'EOF'
+```dotenv
 # Contentful - Content Delivery API (solo lectura - segura para consultas)
-CONTENTFUL_SPACE_ID=tu_space_id_aqui
-CONTENTFUL_ACCESS_TOKEN=tu_content_delivery_token_aqui
-CONTENTFUL_ENVIRONMENT=master
+CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
 
 # ADVERTENCIA: La Content Management API Key tiene permisos de escritura.
 # NUNCA incluyas CONTENTFUL_MANAGEMENT_TOKEN en este archivo ni en el código frontend.
-EOF
 ```
 
 5. Crea tu archivo `.env` real con tus credenciales (cópialo de `.env.example` y rellena los valores):
 
 ```bash
+# Bash:
 cp .env.example .env
-# Abre .env en VS Code y agrega tus credenciales reales
-code .env
 ```
+
+```powershell
+# PowerShell:
+Copy-Item .env.example .env
+```
+
+Abre `.env` en VS Code y agrega tus credenciales reales.
 
 6. Verifica que `.env` está en `.gitignore` (verificación de seguridad):
 
@@ -169,11 +200,13 @@ git status
 
 7. **Explorar el GraphQL Playground de Contentful:**
 
-   Abre tu navegador y navega a la siguiente URL (reemplaza `TU_SPACE_ID` con el tuyo):
+   Abre tu navegador y navega a la siguiente URL (reemplaza los placeholders):
 
    ```
-   https://graphql.contentful.com/content/v1/spaces/TU_SPACE_ID/explore?access_token=TU_ACCESS_TOKEN
+https://graphql.contentful.com/content/v1/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/explore?access_token=<CONTENTFUL_DELIVERY_TOKEN>
    ```
+
+   > **Importante:** GraphQL Explorer requiere el Delivery token en esta URL. Usa solo el token de lectura, evita compartir capturas o enlaces y cierra la pestaña al terminar.
 
    En el Playground, ejecuta la siguiente introspección básica para ver los tipos disponibles:
 
@@ -208,7 +241,7 @@ git status
    }
    ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 ✓ Proyecto inicializado con package.json
@@ -223,9 +256,8 @@ git status
 #### Verificación
 
 ```bash
-# Confirmar estructura del proyecto
-ls -la
-# Debe mostrar: .gitignore, .env, .env.example, package.json, node_modules/
+# Confirmar estructura del proyecto de forma portable
+node -e "const fs=require('fs'); for(const f of ['.gitignore','.env','.env.example','package.json','node_modules']) console.log(f,fs.existsSync(f)?'OK':'FALTA')"
 
 # Confirmar que .env no está trackeado por Git
 git status --short
@@ -244,8 +276,7 @@ git status --short
 
 ```bash
 mkdir src
-touch src/graphql-client.js
-touch src/queries.js
+node -e "for(const f of ['src/graphql-client.js','src/queries.js']) require('fs').closeSync(require('fs').openSync(f,'a'))"
 ```
 
 2. Implementa el cliente GraphQL en `src/graphql-client.js`:
@@ -258,7 +289,7 @@ touch src/queries.js
 import 'dotenv/config';
 
 const SPACE_ID = process.env.CONTENTFUL_SPACE_ID;
-const ACCESS_TOKEN = process.env.CONTENTFUL_ACCESS_TOKEN;
+const ACCESS_TOKEN = process.env.CONTENTFUL_DELIVERY_TOKEN;
 const ENVIRONMENT = process.env.CONTENTFUL_ENVIRONMENT || 'master';
 
 // Endpoint único de GraphQL para Contentful
@@ -403,7 +434,7 @@ main();
 node src/test-client.js
 ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 🔌 Probando conexión con la API GraphQL de Contentful...
@@ -417,8 +448,8 @@ node src/test-client.js
 ┌─────────────────────────────┬──────────────────────────────────┐
 │ (index)                     │ Values                           │
 ├─────────────────────────────┼──────────────────────────────────┤
-│ cache-control               │ public, max-age=15, s-maxage=300 │
-│ cf-cache-status             │ MISS                             │
+│ cache-control               │ [valor devuelto por Contentful] │
+│ cf-cache-status             │ [valor disponible o ausente]    │
 │ x-contentful-request-id     │ abc123...                        │
 │ etag                        │ "a1b2c3..."                      │
 │ age                         │ null                             │
@@ -427,10 +458,7 @@ node src/test-client.js
 
 #### Verificación
 
-```bash
-# El script debe terminar con código de salida 0
-echo "Exit code: $?"   # Debe mostrar: Exit code: 0
-```
+**Criterio observable:** El script termina sin lanzar excepciones y la terminal no reporta un código de salida distinto de cero.
 
 ---
 
@@ -474,7 +502,7 @@ export const QUERY_ARTICULOS_FILTRADOS = `
       items {
         title
         slug
-        publishDate
+        publishedAt
         sys {
           publishedAt
           firstPublishedAt
@@ -496,7 +524,7 @@ export const QUERY_ARTICULOS_PAGINADOS = `
       items {
         title
         slug
-        publishDate
+        publishedAt
       }
     }
   }
@@ -513,7 +541,7 @@ export const QUERY_ARTICULOS_CON_RELACIONES = `
       items {
         title
         slug
-        publishDate
+        publishedAt
         # Referencia a Content Type "Category"
         category {
           name
@@ -523,7 +551,7 @@ export const QUERY_ARTICULOS_CON_RELACIONES = `
         author {
           name
           bio
-          profilePhoto {
+          avatar {
             url
             title
             width
@@ -546,7 +574,7 @@ export const QUERY_ARTICULO_RICH_TEXT = `
       items {
         title
         slug
-        publishDate
+        publishedAt
         # El campo body es Rich Text - retorna objeto JSON estructurado
         body {
           json
@@ -602,7 +630,7 @@ export const QUERY_ARTICULO_POR_SLUG = `
       items {
         title
         slug
-        publishDate
+        publishedAt
       }
     }
   }
@@ -650,7 +678,7 @@ async function ejecutarQueryFiltrada() {
 
   const variables = {
     limite: 5,
-    orden: 'publishDate_DESC',  // Más recientes primero
+    orden: 'publishedAt_DESC',  // Más recientes primero
   };
 
   const result = await graphqlFetch(QUERY_ARTICULOS_FILTRADOS, variables);
@@ -659,8 +687,8 @@ async function ejecutarQueryFiltrada() {
   console.log(`⏱️  Tiempo: ${result.meta.elapsedMs}ms`);
   console.log('\nArtículos ordenados por fecha (más reciente primero):');
   result.data.articleCollection.items.forEach((item, i) => {
-    const fecha = item.publishDate
-      ? new Date(item.publishDate).toLocaleDateString('es-ES')
+    const fecha = item.publishedAt
+      ? new Date(item.publishedAt).toLocaleDateString('es-ES')
       : 'Sin fecha';
     console.log(`  ${i + 1}. [${fecha}] ${item.title}`);
   });
@@ -713,8 +741,8 @@ async function ejecutarQueryConRelaciones() {
     console.log(`\n  Artículo ${i + 1}: "${item.title}"`);
     console.log(`    Categoría: ${item.category?.name ?? 'Sin categoría'}`);
     console.log(`    Autor: ${item.author?.name ?? 'Sin autor'}`);
-    if (item.author?.profilePhoto) {
-      console.log(`    Foto: ${item.author.profilePhoto.url}`);
+    if (item.author?.avatar) {
+      console.log(`    Foto: ${item.author.avatar.url}`);
     }
   });
 }
@@ -732,24 +760,24 @@ async function ejecutarQueryRichText() {
   }
 
   const result = await graphqlFetch(QUERY_ARTICULO_RICH_TEXT, { slug: primerSlug });
-  const articulo = result.data.articleCollection.items[0];
+const article = result.data.articleCollection.items[0];
 
-  if (!articulo) {
+if (!article) {
     console.log(`⚠️  No se encontró artículo con slug: ${primerSlug}`);
     return;
   }
 
-  console.log(`✅ Artículo: "${articulo.title}"`);
+console.log(`✅ Artículo: "${article.title}"`);
   console.log('\n⚠️  IMPORTANTE: Rich Text NO retorna HTML.');
   console.log('   Retorna un árbol JSON (Document) que debe renderizarse con:');
   console.log('   @contentful/rich-text-react-renderer (Lab 4)');
   console.log('   @contentful/rich-text-html-renderer (para SSR/Node.js)');
 
-  if (articulo.body?.json) {
-    console.log(`\n📄 Tipo del nodo raíz: ${articulo.body.json.nodeType}`);
-    console.log(`📄 Número de nodos hijo: ${articulo.body.json.content?.length ?? 0}`);
+if (article.body?.json) {
+  console.log(`\n📄 Tipo del nodo raíz: ${article.body.json.nodeType}`);
+  console.log(`📄 Número de nodos hijo: ${article.body.json.content?.length ?? 0}`);
 
-    const assetsEmbebidos = articulo.body?.links?.assets?.block ?? [];
+  const assetsEmbebidos = article.body?.links?.assets?.block ?? [];
     if (assetsEmbebidos.length > 0) {
       console.log(`\n🖼️  Assets embebidos en el Rich Text: ${assetsEmbebidos.length}`);
       assetsEmbebidos.forEach(asset => {
@@ -764,7 +792,7 @@ async function ejecutarQueryRichText() {
 // ─── Ejecutar todas las queries en secuencia ───────────────────────────────
 async function main() {
   console.log('🚀 Iniciando ejecución de queries GraphQL progresivas...');
-  console.log(`🌐 Endpoint: https://graphql.contentful.com/content/v1/spaces/${process.env.CONTENTFUL_SPACE_ID}`);
+console.log(`🌐 Endpoint: https://graphql.contentful.com/content/v1/spaces/${process.env.CONTENTFUL_SPACE_ID}/environments/${process.env.CONTENTFUL_ENVIRONMENT}`);
 
   try {
     const payloadBasico = await ejecutarQueryBasica();
@@ -789,7 +817,7 @@ main();
 node src/run-queries.js
 ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 🚀 Iniciando ejecución de queries GraphQL progresivas...
@@ -814,9 +842,8 @@ Primeros 3 artículos:
 #### Verificación
 
 ```bash
-# Verificar salida sin errores
-node src/run-queries.js 2>&1 | grep -E "(✅|❌)"
-# Debe mostrar solo líneas con ✅ (sin ❌)
+node src/run-queries.js
+# Criterio observable: las cinco consultas terminan sin errores y retornan los campos solicitados
 ```
 
 ---
@@ -837,14 +864,14 @@ import 'dotenv/config';
 import { graphqlFetch } from './graphql-client.js';
 
 const SPACE_ID = process.env.CONTENTFUL_SPACE_ID;
-const ACCESS_TOKEN = process.env.CONTENTFUL_ACCESS_TOKEN;
+const ACCESS_TOKEN = process.env.CONTENTFUL_DELIVERY_TOKEN;
 
 // ─── Función para consulta REST completa ─────────────────────────────────────
 async function obtenerArticulosREST() {
   const startTime = Date.now();
 
   const response = await fetch(
-    `https://cdn.contentful.com/spaces/${SPACE_ID}/entries?content_type=article&limit=5`,
+    `https://cdn.contentful.com/spaces/${SPACE_ID}/environments/${process.env.CONTENTFUL_ENVIRONMENT}/entries?content_type=article&limit=5`,
     {
       headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
     }
@@ -870,7 +897,7 @@ const QUERY_GRAPHQL_SELECTIVA = `
       items {
         title
         slug
-        publishDate
+        publishedAt
         category { name }
         author { name }
       }
@@ -957,7 +984,7 @@ node src/comparar-rest-vs-graphql.js
 cat comparacion-rest-graphql.json
 ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 📊 COMPARACIÓN CUANTITATIVA: REST vs GraphQL
@@ -985,7 +1012,7 @@ Obteniendo los mismos 5 artículos con ambas APIs...
 
 ```bash
 # Verificar que el reporte fue generado
-test -f comparacion-rest-graphql.json && echo "✅ Reporte generado" || echo "❌ Reporte no encontrado"
+node -e "console.log(require('fs').existsSync('comparacion-rest-graphql.json')?'Reporte generado':'Reporte no encontrado')"
 
 # Verificar que la reducción es mayor al 40% (umbral esperado)
 node -e "
@@ -1053,13 +1080,13 @@ export class GraphQLCache {
 
   /**
    * Almacena un resultado en caché con TTL basado en Cache-Control.
-   * Contentful CDN usa max-age=15 para Delivery API por defecto.
+   * Usa el max-age recibido; si no está disponible, aplica un TTL local conservador.
    */
   set(query, variables, data, cacheControlHeader) {
     const key = this.buildKey(query, variables);
 
     // Extraer max-age del header Cache-Control
-    let ttlMs = 15 * 1000; // Default: 15 segundos (igual que Contentful CDN)
+    let ttlMs = 15 * 1000; // Fallback local si el header no incluye max-age
     if (cacheControlHeader) {
       const match = cacheControlHeader.match(/max-age=(\d+)/);
       if (match) ttlMs = parseInt(match[1]) * 1000;
@@ -1133,8 +1160,8 @@ async function main() {
   console.log(`\n  Cache-Control: ${headers['cache-control']}`);
   console.log('  ↳ Explicación:');
   console.log('    • "public" → El CDN puede cachear esta respuesta');
-  console.log('    • "max-age=15" → El cliente puede usar la caché por 15 segundos');
-  console.log('    • "s-maxage=300" → El CDN (Cloudflare) cachea por 5 minutos');
+  console.log('    • max-age → TTL indicado para el cliente');
+  console.log('    • s-maxage → TTL indicado para cachés compartidas, si está presente');
 
   console.log(`\n  CF-Cache-Status: ${headers['cf-cache-status'] ?? 'No disponible'}`);
   console.log('  ↳ Valores posibles:');
@@ -1164,7 +1191,7 @@ async function main() {
     const origen = result.meta.fromCache ? 'CACHÉ LOCAL' : 'CONTENTFUL API';
     console.log(`   ⏱️  Tiempo total: ${elapsed}ms (desde ${origen})\n`);
 
-    // Pequeña pausa entre requests para no superar rate limit (7 req/s)
+// Pequeña pausa conservadora entre requests
     if (i < 3) await new Promise(r => setTimeout(r, 200));
   }
 
@@ -1203,7 +1230,7 @@ main().catch(console.error);
 node src/analizar-cache.js
 ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 🔍 ANÁLISIS DE CACHÉ HTTP Y CDN DE CONTENTFUL
@@ -1211,13 +1238,13 @@ node src/analizar-cache.js
 ━━━ PARTE 1: Cabeceras de Caché del CDN ━━━
 
 Cabeceras recibidas del CDN de Contentful:
-  Cache-Control: public, max-age=15, s-maxage=300
+  Cache-Control: [valor devuelto por Contentful]
   ↳ Explicación:
     • "public" → El CDN puede cachear esta respuesta
-    • "max-age=15" → El cliente puede usar la caché por 15 segundos
-    • "s-maxage=300" → El CDN (Cloudflare) cachea por 5 minutos
+    • max-age → TTL indicado para el cliente, si está presente
+    • s-maxage → TTL indicado para cachés compartidas, si está presente
 
-  CF-Cache-Status: MISS
+  CF-Cache-Status: [valor disponible o ausente según la respuesta]
   ETag: "a1b2c3d4..."
   Age: 0 segundos
 
@@ -1243,8 +1270,8 @@ Request 3:
 #### Verificación
 
 ```bash
-node src/analizar-cache.js 2>&1 | grep -E "(CACHE HIT|CACHE MISS|✅)"
-# Debe mostrar: 1 CACHE MISS seguido de 2 CACHE HIT y el mensaje ✅
+node src/analizar-cache.js
+# Criterio observable: la primera llamada consulta Contentful y las repetidas usan la caché local
 ```
 
 ---
@@ -1336,7 +1363,7 @@ async function demostrarGraphQLRequest() {
   sep('📦 ALTERNATIVA: graphql-request');
 
   const SPACE_ID = process.env.CONTENTFUL_SPACE_ID;
-  const ACCESS_TOKEN = process.env.CONTENTFUL_ACCESS_TOKEN;
+  const ACCESS_TOKEN = process.env.CONTENTFUL_DELIVERY_TOKEN;
   const ENVIRONMENT = process.env.CONTENTFUL_ENVIRONMENT || 'master';
 
   const endpoint = `https://graphql.contentful.com/content/v1/spaces/${SPACE_ID}/environments/${ENVIRONMENT}`;
@@ -1403,11 +1430,11 @@ git add .gitignore .env.example package.json package-lock.json src/
 # Verificar qué se va a commitear (NO debe incluir .env)
 git diff --cached --name-only
 
-# Commit
+# Commit local opcional
 git commit -m "feat: lab03 - cliente GraphQL con queries progresivas, caché y seguridad"
 ```
 
-#### Salida esperada
+#### Resultado esperado
 
 ```
 🔐 MÓDULO DE SEGURIDAD: Variables GraphQL vs Interpolación
@@ -1436,25 +1463,24 @@ git commit -m "feat: lab03 - cliente GraphQL con queries progresivas, caché y s
 #### Verificación
 
 ```bash
-# Verificar que .env no está en el repositorio
+# Funciona en Bash y PowerShell
 git log --oneline -1
-git show --stat HEAD | grep ".env"
-# La línea anterior NO debe mostrar .env en el commit
-echo "✅ .env no commiteado" 
+git log --all --full-history -- .env
+# La segunda línea no debe mostrar commits
 ```
 
 ---
 
-## Validación y Pruebas
+## Validación final
 
 ### Prueba 1: Verificación con Postman/Bruno
 
 Configura Postman para enviar una query GraphQL manualmente y verificar el comportamiento del protocolo:
 
 1. Abre Postman y crea una nueva request de tipo **POST**
-2. URL: `https://graphql.contentful.com/content/v1/spaces/TU_SPACE_ID`
+2. URL: `https://graphql.contentful.com/content/v1/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>`
 3. Headers:
-   - `Authorization: Bearer TU_ACCESS_TOKEN`
+   - `Authorization: Bearer <CONTENTFUL_DELIVERY_TOKEN>`
    - `Content-Type: application/json`
 4. Body (raw JSON):
 
@@ -1476,7 +1502,10 @@ Configura Postman para enviar una query GraphQL manualmente y verificar el compo
 
 Crea y ejecuta el script de validación final:
 
+> **Bash:** El siguiente heredoc crea el archivo automáticamente. En PowerShell, crea `src/validacion-final.js` con VS Code y pega el contenido JavaScript comprendido entre `EOF`.
+
 ```bash
+# Bash:
 cat > src/validacion-final.js << 'EOF'
 // src/validacion-final.js
 import { graphqlFetch } from './graphql-client.js';
@@ -1535,14 +1564,14 @@ async function main() {
     if (typeof stats1.hits !== 'number') throw new Error('Stats de caché inválidas');
   });
 
-  await prueba('Payload GraphQL es menor que 5000 bytes para 5 artículos', async () => {
+  await prueba('Payload GraphQL reporta un tamaño observable', async () => {
     const r = await graphqlFetch(QUERY_ARTICULOS_BASICA);
-    if (r.meta.payloadBytes > 5000) throw new Error(`Payload demasiado grande: ${r.meta.payloadBytes} bytes`);
+    if (!(r.meta.payloadBytes > 0)) throw new Error('No se pudo medir el payload');
   });
 
-  await prueba('Cabeceras de caché contienen Cache-Control', async () => {
+  await prueba('Metadatos de caché están disponibles para análisis', async () => {
     const r = await graphqlFetch(QUERY_ARTICULOS_BASICA);
-    if (!r.meta.cacheHeaders['cache-control']) throw new Error('Falta cabecera Cache-Control');
+    if (!r.meta.cacheHeaders) throw new Error('No se recibieron metadatos de headers');
   });
 
   console.log(`\n${'─'.repeat(40)}`);
@@ -1561,7 +1590,7 @@ EOF
 node src/validacion-final.js
 ```
 
-**Salida esperada de la validación:**
+**Resultado esperado de la validación:**
 
 ```
 🧪 SUITE DE VALIDACIÓN — Lab 03
@@ -1597,7 +1626,7 @@ El proyecto no tiene `"type": "module"` en `package.json`, por lo que Node.js in
 **Solución:**
 ```bash
 # Verificar el contenido actual de package.json
-cat package.json | grep '"type"'
+node -e "console.log('type:',require('./package.json').type)"
 
 # Si no aparece "type": "module", agregarlo:
 node -e "
@@ -1630,7 +1659,7 @@ console.log('Corregido: type: module agregado a package.json');
 ```
 
 **Causa:**
-El nombre del Content Type en Contentful no coincide con el nombre usado en la query. GraphQL genera el nombre de la colección a partir del `API Identifier` del Content Type (no del display name), convirtiendo `camelCase` a `camelCaseCollection`. Por ejemplo, si el Content Type se llama `blogPost`, la query debe usar `blogPostCollection`, no `articleCollection`.
+El API Identifier del Content Type no coincide con el contrato canónico. Este curso usa `article`, por lo que GraphQL debe exponer `articleCollection` y `ArticleOrder`.
 
 **Solución:**
 ```bash
@@ -1653,9 +1682,8 @@ import('./src/graphql-client.js').then(({ graphqlFetch }) => {
 "
 
 # Paso 2: Actualizar todas las queries en src/queries.js con el nombre correcto
-# Por ejemplo, si tu Content Type tiene API Identifier "blogPost":
-# articleCollection → blogPostCollection
-# ArticleOrder → BlogPostOrder
+# Verifica que el API Identifier sea exactamente "article".
+# Si no lo es, corrige el modelo para mantener la continuidad del curso.
 ```
 
 ---
@@ -1665,7 +1693,8 @@ import('./src/graphql-client.js').then(({ graphqlFetch }) => {
 Al finalizar el lab, ejecuta los siguientes pasos para dejar el entorno ordenado:
 
 ```bash
-# 1. Verificar que no hay credenciales expuestas antes de cualquier push
+# Funciona en Bash y PowerShell
+# 1. Verificar que no hay credenciales expuestas
 git status
 git diff --cached --name-only
 # Confirmar que .env NO aparece
@@ -1674,24 +1703,22 @@ git diff --cached --name-only
 git log --all --full-history -- .env
 # No debe retornar ningún resultado
 
-# 3. Limpiar archivos temporales generados durante el lab
-rm -f comparacion-rest-graphql.json
+# 3. Limpiar manualmente comparacion-rest-graphql.json si ya no se necesita
 
-# 4. Verificar estructura final del proyecto
-find . -name "*.js" -not -path "*/node_modules/*" | sort
+# 4. Verificar estructura final del proyecto de forma portable
+node -e "const fs=require('fs'),p=require('path');function walk(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){if(e.name==='node_modules')continue;const f=p.join(d,e.name);e.isDirectory()?walk(f):e.name.endsWith('.js')&&console.log(f)}}walk('.')"
 # Debe mostrar: src/graphql-client.js, src/queries.js, src/run-queries.js,
 #               src/comparar-rest-vs-graphql.js, src/analizar-cache.js,
 #               src/cache-manager.js, src/seguridad-variables.js,
 #               src/validacion-final.js, src/test-client.js
 
-# 5. Commit final del estado limpio
+# 5. Commit local opcional del estado revisado
 git add -A
 git status  # Revisar una vez más
 git commit -m "chore: cleanup lab03 - remover archivos temporales"
 
-# 6. OPCIONAL: Si deseas liberar espacio de node_modules
-# (se puede reinstalar con 'npm install' cuando sea necesario)
-# rm -rf node_modules
+# 6. OPCIONAL: elimina node_modules desde el explorador de archivos si necesitas liberar espacio.
+# Se puede reinstalar con npm install.
 ```
 
 > **⚠️ Importante:** El espacio de Contentful y sus datos **NO deben eliminarse**. Los Labs 04 y 05 dependen del mismo espacio y modelo de contenido.
@@ -1702,20 +1729,26 @@ git commit -m "chore: cleanup lab03 - remover archivos temporales"
 
 En esta práctica construiste un cliente GraphQL completo para Contentful usando `fetch` nativo de Node.js 18, lo que te permitió entender el protocolo HTTP subyacente antes de usar librerías de abstracción. Implementaste cinco queries de complejidad progresiva: desde selección básica de campos hasta relaciones entre Content Types y manejo del árbol JSON de Rich Text.
 
-Realizaste una comparación cuantitativa que demostró reducciones de payload superiores al 80% con GraphQL respecto a REST equivalente, validando la ventaja de la selección precisa de campos para eliminar el over-fetching. Implementaste y analizaste estrategias de caché HTTP, comprendiendo el rol del CDN de Cloudflare de Contentful y cómo las cabeceras `Cache-Control`, `ETag` y `CF-Cache-Status` gobiernan el comportamiento de caché. Finalmente, aplicaste medidas de seguridad críticas refactorizando queries con interpolación de strings hacia el uso de variables GraphQL.
+Realizaste una comparación cuantitativa del payload de GraphQL respecto a REST equivalente, observando cómo la selección precisa de campos puede reducir el over-fetching. Implementaste y analizaste estrategias de caché HTTP a partir de las cabeceras devueltas por Contentful. Finalmente, aplicaste medidas de seguridad críticas refactorizando queries con interpolación de strings hacia el uso de variables GraphQL.
 
 ### Conceptos Clave
 
 | Concepto | Descripción |
 |---|---|
-| **Endpoint único GraphQL** | `POST https://graphql.contentful.com/content/v1/spaces/{SPACE_ID}` |
+| **Endpoint único GraphQL** | `POST https://graphql.contentful.com/content/v1/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>` |
 | **Schema autogenerado** | Cada Content Type genera tipos `Item`, `Collection`, `Filter` y `Order` |
 | **Over-fetching eliminado** | GraphQL retorna solo los campos declarados en la query |
 | **Linked entries en 1 request** | Las relaciones se resuelven en una sola llamada (vs múltiples en REST) |
 | **Rich Text = JSON, no HTML** | Usar `@contentful/rich-text-react-renderer` para renderizar (Lab 4) |
 | **Variables GraphQL** | Previenen inyección; los valores dinámicos SIEMPRE van como variables |
-| **Cache-Control CDN** | `s-maxage=300` → Cloudflare cachea 5 min; `max-age=15` → cliente 15 seg |
+| **Cache-Control CDN** | Interpreta los valores de `Cache-Control` devueltos en cada respuesta; pueden variar |
 | **ETag** | Permite `304 Not Modified` cuando el contenido no cambió |
+
+### Preguntas de reflexión
+
+1. ¿En qué consultas observaste una ventaja clara de GraphQL frente a REST?
+2. ¿Por qué las variables GraphQL son preferibles a interpolar valores dentro de una query?
+3. ¿Qué diferencia existe entre la caché del CDN y una caché administrada por la aplicación?
 
 ### Recursos Adicionales
 
@@ -1727,4 +1760,3 @@ Realizaste una comparación cuantitativa que demostró reducciones de payload su
 - [Rich Text Renderer para React — @contentful/rich-text-react-renderer](https://www.npmjs.com/package/@contentful/rich-text-react-renderer)
 
 ---
-LAB_END---
