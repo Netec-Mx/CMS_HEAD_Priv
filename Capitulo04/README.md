@@ -1,5 +1,22 @@
 # Flujo completo publicación → despliegue
 
+## Arquitectura del laboratorio
+
+La publicación activa un Webhook y el frontend consulta el contenido actualizado para renderizar el portal.
+
+```mermaid
+flowchart LR
+    Editor[Editor en Contentful] --> Publish[Publicación de contenido]
+    Publish --> Contentful[Contentful]
+    Publish --> Webhook[Webhook]
+    Webhook --> Update[Señal de actualización]
+    Contentful --> Portal[portal-noticias]
+    Update --> Portal
+    Portal --> Render[Actualización / renderizado]
+```
+
+---
+
 ## Metadatos
 
 | Campo | Valor |

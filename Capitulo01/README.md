@@ -1,5 +1,24 @@
 # Crear modelos y publicar primeras entradas
 
+## Arquitectura del laboratorio
+
+El editor configura el modelo canónico, crea contenido y lo publica dentro del mismo espacio de Contentful.
+
+```mermaid
+flowchart LR
+    Editor[Usuario / Editor] --> Space[Contentful Space]
+    Space --> Model[Content Types]
+    Model --> Article[article]
+    Model --> Category[category]
+    Model --> Author[author]
+    Article --> Content[Entries y Assets]
+    Category --> Content
+    Author --> Content
+    Content --> Publish[Publicación]
+```
+
+---
+
 ## 1. Metadatos
 
 | Atributo        | Valor                                      |

@@ -1,5 +1,22 @@
 # Consumo de la API REST de Contentful con el SDK de JavaScript
 
+## Arquitectura del laboratorio
+
+La aplicación Node.js carga la configuración segura, consulta Contentful mediante el SDK oficial y procesa la respuesta JSON.
+
+```mermaid
+flowchart LR
+    Developer[Desarrollador] --> App[App Node.js]
+    Env[.env] --> App
+    App --> SDK[SDK JavaScript de Contentful]
+    SDK --> API[Contentful Delivery API]
+    API --> Content[article / category / author]
+    Content --> JSON[Respuesta JSON]
+    JSON --> App
+```
+
+---
+
 ## Metadatos
 
 | Campo            | Detalle                                      |

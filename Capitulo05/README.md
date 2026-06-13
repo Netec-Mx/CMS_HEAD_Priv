@@ -1,5 +1,21 @@
 # Proyecto demo funcional end-to-end
 
+## Arquitectura del laboratorio
+
+El proyecto final valida de extremo a extremo la publicación, el consumo y la presentación del contenido.
+
+```mermaid
+flowchart LR
+    Contentful[Contentful] --> Client[src/lib/contentfulClient.js]
+    Client --> Service[Servicio de contenido]
+    Service --> Portal[portal-noticias]
+    Portal --> Pages[Componentes y páginas]
+    Pages --> Validation[Validación final end-to-end]
+    Validation -. comprueba .-> Contentful
+```
+
+---
+
 ## Metadatos
 
 | Atributo        | Valor                                      |

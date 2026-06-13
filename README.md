@@ -6,6 +6,10 @@ Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Cu
 
 - `CapituloXX/README.md`: guía de laboratorio por capítulo.
 
+## Representación visual
+
+Cada laboratorio inicia con un diagrama Mermaid breve de su arquitectura. El curso no depende de capturas de pantalla ni de las imágenes heredadas ubicadas en `labs/images`, ya que pertenecen a otro material y quedan excluidas del flujo de este curso.
+
 ## Contrato técnico del curso
 
 Todos los laboratorios usan el mismo espacio de Contentful, el environment `master` y el siguiente modelo canónico. Los API IDs y Field IDs deben respetarse exactamente para mantener la continuidad entre capítulos.

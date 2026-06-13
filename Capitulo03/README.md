@@ -1,5 +1,21 @@
 # Implementar consultas GraphQL optimizadas
 
+## Arquitectura del laboratorio
+
+El script solicita únicamente los campos necesarios mediante GraphQL y recibe una respuesta filtrada del modelo canónico.
+
+```mermaid
+flowchart LR
+    App[App / Script GraphQL] --> Query[Consulta optimizada]
+    Query --> API[GraphQL Content API]
+    API --> Contentful[Contentful]
+    Contentful --> Model[article / category / author]
+    Model --> Filtered[Respuesta filtrada]
+    Filtered --> App
+```
+
+---
+
 ## Metadatos
 
 | Campo | Detalle |
