@@ -1,7 +1,20 @@
----LAB_START---
-LAB_ID: 05-00-01
----MARKDOWN---
-# Proyecto Demo funcional end-to-end
+# Proyecto demo funcional end-to-end
+
+## Arquitectura del laboratorio
+
+El proyecto final valida de extremo a extremo la publicación, el consumo y la presentación del contenido.
+
+```mermaid
+flowchart LR
+    Contentful[Contentful] --> Client[src/lib/contentfulClient.js]
+    Client --> Service[Servicio de contenido]
+    Service --> Portal[portal-noticias]
+    Portal --> Pages[Componentes y páginas]
+    Pages --> Validation[Validación final end-to-end]
+    Validation -. comprueba .-> Contentful
+```
+
+---
 
 ## Metadatos
 
@@ -17,7 +30,26 @@ LAB_ID: 05-00-01
 
 ## Descripción General
 
-Esta práctica integradora consolida todos los aprendizajes del curso construyendo un **portal digital demo funcional end-to-end**. El estudiante diseñará un modelo de contenido completo con al menos tres Content Types interrelacionados, lo implementará en Contentful, conectará un frontend React que consuma la API, aplicará todas las medidas de seguridad aprendidas y ejecutará un checklist técnico formal de 20 ítems antes de considerar el proyecto terminado. La temática del portal es libre: blog tecnológico, portafolio, portal de eventos o catálogo de productos.
+Esta práctica integradora consolida todos los aprendizajes del curso completando el **portal de noticias demo funcional end-to-end** iniciado en las prácticas anteriores. El estudiante validará el modelo canónico de tres Content Types interrelacionados, continuará el frontend React que consume la API, aplicará las medidas de seguridad aprendidas y ejecutará un checklist técnico formal de 20 ítems antes de considerar el proyecto terminado.
+
+---
+
+### Escenario de la práctica
+
+El portal de noticias está listo para una revisión técnica final. Debes consolidar lo construido, comprobar su funcionamiento de extremo a extremo y documentar evidencias suficientes para entregar el proyecto.
+
+### Objetivo de la práctica
+
+Validar y completar el proyecto existente `portal-noticias` usando el modelo canónico, la estructura acordada y un checklist técnico que permita identificar y resolver pendientes antes de la entrega.
+
+### Cómo trabajar esta práctica
+
+1. Continúa desde el proyecto `portal-noticias` creado en la Práctica 4.
+2. No rediseñes Content Types, API IDs ni rutas: valida el contrato técnico existente.
+3. Registra cada comprobación como `PASS` o `FAIL` y resuelve los fallos antes de cerrar.
+4. Conserva evidencias de la validación sin incluir credenciales reales.
+
+> **Importante:** Esta práctica depende del estado final de las prácticas anteriores; no utiliza archivos de recuperación ni crea un proyecto frontend alternativo.
 
 ---
 
@@ -25,7 +57,7 @@ Esta práctica integradora consolida todos los aprendizajes del curso construyen
 
 Al completar esta práctica, el estudiante será capaz de:
 
-- [ ] Diseñar un modelo de contenido coherente con al menos 3 Content Types interrelacionados, aplicando campos, validaciones y referencias correctas
+- [ ] Validar el modelo canónico de 3 Content Types interrelacionados, comprobando campos, validaciones y referencias correctas
 - [ ] Implementar un frontend React funcional que muestre listado, detalle y filtrado de contenido consumido desde la Delivery API de Contentful
 - [ ] Aplicar medidas de seguridad completas: variables de entorno, `.gitignore`, separación de API Keys y ausencia total de credenciales hardcodeadas
 - [ ] Ejecutar y documentar un checklist técnico de 20 ítems (Modelado, API/Autenticación, Frontend, Seguridad) con resultado PASS/FAIL
@@ -46,7 +78,7 @@ Al completar esta práctica, el estudiante será capaz de:
 ### Acceso y Recursos
 
 - Cuenta de Contentful activa (Plan Community gratuito)
-- Espacio de Contentful creado en la Práctica 1 (o importado con el script de recuperación)
+- Espacio de Contentful creado y conservado desde la Práctica 1
 - Content Delivery API Key disponible (obtenida en prácticas anteriores)
 - Proyecto React de la Práctica 4 disponible localmente y funcional
 - Git inicializado en el proyecto con `.gitignore` configurado
@@ -81,6 +113,8 @@ Al completar esta práctica, el estudiante será capaz de:
 
 Ejecuta los siguientes comandos en tu terminal para confirmar que el entorno está listo antes de comenzar:
 
+> **Compatibilidad de terminal:** Los comandos de Node.js, npm y Git son portables. En PowerShell utiliza `Test-Path`, `Get-Content` y `Select-String` en lugar de `ls`, `cat` y `grep` cuando aparezcan en ejemplos Bash.
+
 ```bash
 # Verificar versiones de herramientas clave
 node --version        # Debe mostrar v18.x.x o superior
@@ -89,18 +123,12 @@ git --version         # Debe mostrar 2.40.x o superior
 contentful --version  # Debe mostrar 3.x.x o superior
 
 # Verificar que el proyecto base de la Práctica 4 existe
-ls ~/portal-demo      # Ajusta la ruta si tu proyecto está en otro directorio
-cd ~/portal-demo && npm list contentful  # Debe mostrar contentful@10.x.x
+node -e "console.log('portal-noticias existe:',require('fs').existsSync('portal-noticias'))"
+cd portal-noticias
+npm list contentful
 ```
 
-> **⚠️ Si no completaste la Práctica 4:** Ejecuta el script de recuperación antes de continuar:
-> ```bash
-> contentful space import \
->   --space-id TU_SPACE_ID \
->   --content-file ./recovery-export.json \
->   --management-token TU_MANAGEMENT_TOKEN
-> ```
-> Solicita el archivo `recovery-export.json` a tu instructor.
+> **Prerrequisito obligatorio:** Completa las Prácticas 1 a 4 antes de continuar. Este proyecto final continúa sobre `portal-noticias` y sobre el modelo canónico existente. En esta fase no se proporciona un archivo de recuperación alternativo.
 
 ---
 
@@ -114,21 +142,15 @@ cd ~/portal-demo && npm list contentful  # Debe mostrar contentful@10.x.x
 
 ---
 
-### Paso 1: Diseñar el Modelo de Contenido en Papel
+### Paso 1: Revisar el Modelo de Contenido
 
 **Objetivo:** Definir formalmente los tres Content Types del portal, sus campos, tipos de dato, validaciones y relaciones antes de tocar Contentful.
 
 #### Instrucciones
 
-1. **Elige la temática** de tu portal. Las opciones son:
-   - Blog tecnológico (`article`, `author`, `category`)
-   - Portafolio profesional (`project`, `skill`, `client`)
-   - Portal de eventos (`event`, `speaker`, `venue`)
-   - Catálogo de productos (`product`, `brand`, `productCategory`)
+1. **Usa el portal de noticias del curso** con los Content Types canónicos `article`, `author` y `category`. No cambies los API IDs ni los Field IDs, porque el proyecto continúa directamente desde las prácticas anteriores.
 
-   > Para este lab usaremos **Blog tecnológico** como referencia. Si eliges otra temática, adapta los nombres de Content Types manteniendo la misma estructura de relaciones.
-
-2. **Documenta el modelo** completando la siguiente tabla en papel, un documento o un comentario en tu código. Copia y adapta según tu temática:
+2. **Documenta y valida el modelo canónico** completando la siguiente tabla en papel, un documento o un comentario en tu código. No cambies los API IDs ni los Field IDs:
 
    **Content Type: `article`**
 
@@ -136,22 +158,20 @@ cd ~/portal-demo && npm list contentful  # Debe mostrar contentful@10.x.x
    |---------------|---------------|--------------|-----------|-------------|----------------------------------------|
    | Título        | `title`       | Short Text   | Sí        | Sí          | Longitud máx. 120 caracteres           |
    | Slug          | `slug`        | Short Text   | Sí        | No          | Regex: `^[a-z0-9-]+$`; único          |
-   | Resumen       | `summary`     | Short Text   | Sí        | Sí          | Longitud máx. 300 caracteres           |
    | Cuerpo        | `body`        | Rich Text    | Sí        | Sí          | —                                      |
    | Imagen portada| `coverImage`  | Media        | No        | No          | Solo imágenes (JPEG, PNG, WebP)        |
    | Autor         | `author`      | Reference    | Sí        | No          | Solo tipo `author`                     |
    | Categoría     | `category`    | Reference    | Sí        | No          | Solo tipo `category`                   |
    | Fecha pub.    | `publishedAt` | Date         | Sí        | No          | —                                      |
-   | Etiquetas     | `tags`        | Array (Text) | No        | No          | —                                      |
 
    **Content Type: `author`**
 
    | Campo         | ID del campo | Tipo       | Requerido | Localizable |
    |---------------|--------------|------------|-----------|-------------|
-   | Nombre        | `fullName`   | Short Text | Sí        | No          |
+   | Nombre        | `name`   | Short Text | Sí        | No          |
+   | Slug          | `slug`       | Short Text | Sí        | No          |
    | Biografía     | `bio`        | Long Text  | No        | No          |
    | Avatar        | `avatar`     | Media      | No        | No          |
-   | Email         | `email`      | Short Text | No        | No          |
 
    **Content Type: `category`**
 
@@ -203,7 +223,7 @@ No hay verificación técnica en este paso. Confirma que puedes responder estas 
 1. **Navega al directorio del proyecto** y verifica su estado:
 
    ```bash
-   cd ~/portal-demo   # Ajusta la ruta a tu proyecto
+   cd ~/portal-noticias   # Ajusta la ruta a tu proyecto
    git status         # Debe mostrar un repositorio limpio o con cambios conocidos
    npm run dev        # Verifica que el servidor de desarrollo arranca sin errores
    # Presiona Ctrl+C para detener el servidor
@@ -212,16 +232,16 @@ No hay verificación técnica en este paso. Confirma que puedes responder estas 
 2. **Verifica el archivo `.env`** en la raíz del proyecto. Debe contener las variables de Contentful:
 
    ```bash
-   cat .env
+   node -e "const fs=require('fs'); console.log('.env existe:',fs.existsSync('.env'),'tamaño:',fs.existsSync('.env')?fs.statSync('.env').size:0)"
    ```
 
    El archivo debe tener al menos estas variables (con tus valores reales):
 
    ```bash
    # .env — NUNCA commitear este archivo
-   VITE_CONTENTFUL_SPACE_ID=tu_space_id_aqui
-   VITE_CONTENTFUL_DELIVERY_TOKEN=tu_delivery_token_aqui
-   VITE_CONTENTFUL_ENVIRONMENT=master
+   VITE_CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+   VITE_CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+   VITE_CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
    ```
 
    > **🔒 SEGURIDAD CRÍTICA:** Si este archivo no existe, créalo ahora. Si ya existe, verifica que el `.gitignore` lo excluye.
@@ -229,45 +249,50 @@ No hay verificación técnica en este paso. Confirma que puedes responder estas 
 3. **Verifica el `.gitignore`** para asegurarte de que `.env` está excluido:
 
    ```bash
-   cat .gitignore | grep ".env"
-   # Debe mostrar: .env
+   git check-ignore -v .env
+   # Criterio observable: Git muestra la regla que excluye .env
    ```
 
    Si no aparece, agrégalo:
 
    ```bash
-   echo ".env" >> .gitignore
-   echo ".env.local" >> .gitignore
-   echo ".env.*.local" >> .gitignore
+   # Bash:
+   printf ".env\n.env.local\n.env.*.local\n" >> .gitignore
+   ```
+
+   ```powershell
+   # PowerShell:
+   @('.env','.env.local','.env.*.local') | Add-Content .gitignore
    ```
 
 4. **Verifica que `.env.example` existe** con las variables sin valores reales:
 
    ```bash
-   cat .env.example
+   node -e "console.log(require('fs').readFileSync('.env.example','utf8'))"
    ```
 
    Si no existe, créalo:
 
-   ```bash
-   cat > .env.example << 'EOF'
+   ```dotenv
    # Copia este archivo como .env y completa con tus valores reales
    # NUNCA commitees el archivo .env con valores reales
-   VITE_CONTENTFUL_SPACE_ID=
-   VITE_CONTENTFUL_DELIVERY_TOKEN=
-   VITE_CONTENTFUL_ENVIRONMENT=master
-   EOF
+   VITE_CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+   VITE_CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+   VITE_CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
    ```
+
+   Crea `.env.example` con VS Code o tu editor usando el contenido anterior.
 
 5. **Confirma la estructura del proyecto.** Debe existir al menos:
 
    ```
-   portal-demo/
+   portal-noticias/
    ├── .env                    ← con valores reales (NO en Git)
    ├── .env.example            ← sin valores reales (SÍ en Git)
    ├── .gitignore              ← incluye .env
    ├── src/
-   │   ├── contentfulClient.js ← cliente configurado con SDK v10
+   │   ├── lib/
+   │   │   └── contentfulClient.js ← cliente configurado con SDK v10
    │   ├── App.jsx
    │   └── components/
    └── package.json
@@ -276,13 +301,13 @@ No hay verificación técnica en este paso. Confirma que puedes responder estas 
 6. **Verifica que el cliente de Contentful usa la Delivery API** (no la Management API):
 
    ```bash
-   cat src/contentfulClient.js
+   node -e "console.log(require('fs').readFileSync('src/lib/contentfulClient.js','utf8'))"
    ```
 
    Debe verse similar a:
 
    ```javascript
-   // src/contentfulClient.js
+   // src/lib/contentfulClient.js
    import { createClient } from 'contentful';
 
    const client = createClient({
@@ -339,7 +364,7 @@ git ls-files .env.example
 
 3. **Crea o verifica el Content Type `author`**:
 
-   - Campos: `fullName` (Short text, Required ✓), `bio` (Long text), `avatar` (Media), `email` (Short text)
+   - Campos: `name` (Short text, Required ✓), `slug` (Short text, Required ✓, Unique ✓), `bio` (Long text), `avatar` (Media)
    - **Save** → **Publish**.
 
 4. **Crea o verifica el Content Type `article`**:
@@ -358,8 +383,8 @@ git ls-files .env.example
    | Tipo       | Cantidad mínima | Ejemplo de datos                                      |
    |------------|-----------------|-------------------------------------------------------|
    | `category` | 2               | "Tecnología" (slug: `tecnologia`), "Tutoriales" (slug: `tutoriales`) |
-   | `author`   | 1               | "Ana García", bio breve, email opcional               |
-   | `article`  | 3               | Artículos con título, slug, resumen, body en Rich Text, autor y categoría asignados |
+   | `author`   | 1               | "Ana García", slug `ana-garcia`, bio breve            |
+   | `article`  | 3               | Artículos con título, slug, body en Rich Text, autor y categoría asignados |
 
    > **⚠️ Rich Text:** El campo `body` retorna un árbol JSON, NO HTML. En el frontend deberás usar `@contentful/rich-text-react-renderer` para renderizarlo. Si lo instalaste en la Práctica 4, ya está disponible.
 
@@ -371,13 +396,13 @@ En la sección **Content** del espacio de Contentful deben aparecer al menos 6 e
 
 #### Verificación
 
-Verifica vía la Delivery API directamente en el navegador:
+Verifica la Delivery API sin colocar el token en la URL:
 
-```
-https://cdn.contentful.com/spaces/TU_SPACE_ID/entries?content_type=article&access_token=TU_DELIVERY_TOKEN
+```bash
+node -e "fetch('https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries?content_type=article',{headers:{Authorization:'Bearer <CONTENTFUL_DELIVERY_TOKEN>'}}).then(r=>r.json()).then(d=>console.log('Artículos publicados:',d.total))"
 ```
 
-Reemplaza `TU_SPACE_ID` y `TU_DELIVERY_TOKEN` con tus valores. Debes ver un JSON con `total: 3` (o el número de artículos que hayas creado) y los campos de cada artículo.
+Reemplaza los placeholders. El criterio observable es recibir una colección de `article` publicados; el total depende del contenido creado.
 
 ---
 
@@ -390,15 +415,15 @@ Reemplaza `TU_SPACE_ID` y `TU_DELIVERY_TOKEN` con tus valores. Debes ver un JSON
 1. **Verifica las dependencias actuales** del proyecto:
 
    ```bash
-   cd ~/portal-demo
-   cat package.json | grep -A 20 '"dependencies"'
+   cd portal-noticias
+   npm list --depth=0
    ```
 
 2. **Instala el renderer de Rich Text** si no está presente:
 
    ```bash
    # Verificar si ya está instalado
-   npm list @contentful/rich-text-react-renderer 2>/dev/null
+   npm list @contentful/rich-text-react-renderer
 
    # Si no está instalado, instalarlo ahora
    npm install @contentful/rich-text-react-renderer @contentful/rich-text-types
@@ -407,7 +432,7 @@ Reemplaza `TU_SPACE_ID` y `TU_DELIVERY_TOKEN` con tus valores. Debes ver un JSON
 3. **Instala React Router** si no está presente (necesario para navegación entre listado y detalle):
 
    ```bash
-   npm list react-router-dom 2>/dev/null
+   npm list react-router-dom
    # Si no está instalado:
    npm install react-router-dom@6
    ```
@@ -445,8 +470,7 @@ Reemplaza `TU_SPACE_ID` y `TU_DELIVERY_TOKEN` con tus valores. Debes ver un JSON
 1. **Crea el archivo `src/services/contentfulService.js`**:
 
    ```bash
-   mkdir -p src/services
-   touch src/services/contentfulService.js
+   node -e "const fs=require('fs');fs.mkdirSync('src/services',{recursive:true});fs.closeSync(fs.openSync('src/services/contentfulService.js','a'))"
    ```
 
 2. **Implementa el servicio** con las funciones necesarias para el portal:
@@ -456,7 +480,7 @@ Reemplaza `TU_SPACE_ID` y `TU_DELIVERY_TOKEN` con tus valores. Debes ver un JSON
    // Servicio centralizado para todas las consultas a Contentful
    // Usa EXCLUSIVAMENTE la Delivery API (solo lectura)
 
-   import client from '../contentfulClient.js';
+   import client from '../lib/contentfulClient.js';
 
    /**
     * Obtiene todos los artículos publicados, ordenados por fecha descendente.
@@ -522,13 +546,11 @@ El archivo `src/services/contentfulService.js` existe con las tres funciones exp
 #### Verificación
 
 ```bash
-# Verificar que el archivo existe y tiene contenido
-wc -l src/services/contentfulService.js
-# Debe mostrar aproximadamente 50 líneas
+# Verificar existencia y sintaxis sin asumir una cantidad exacta de líneas
+node --check src/services/contentfulService.js
 
-# Verificar que no hay credenciales hardcodeadas en el servicio
-grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
-# No debe mostrar ningún resultado (las credenciales están en .env)
+# Confirmar que el servicio reutiliza el cliente centralizado
+node -e "const s=require('fs').readFileSync('src/services/contentfulService.js','utf8');console.log('usa cliente centralizado:',s.includes(\"../lib/contentfulClient.js\"))"
 ```
 
 ---
@@ -647,9 +669,8 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
                  <Link to={`/article/${article.fields.slug}`}>
                    <h2>{article.fields.title}</h2>
                  </Link>
-                 <p>{article.fields.summary}</p>
                  <small>
-                   Por: {article.fields.author?.fields?.fullName || 'Autor desconocido'} |{' '}
+                   Por: {article.fields.author?.fields?.name || 'Autor desconocido'} |{' '}
                    {new Date(article.fields.publishedAt).toLocaleDateString('es-ES')}
                  </small>
                </li>
@@ -699,18 +720,16 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
      if (loading) return <p>Cargando artículo...</p>;
      if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
-     const { title, summary, body, author, category, publishedAt, coverImage } = article.fields;
+     const { title, body, author, category, publishedAt, coverImage } = article.fields;
 
      return (
        <article>
          <Link to="/">← Volver al listado</Link>
 
          <h1>{title}</h1>
-         <p><em>{summary}</em></p>
-
          {/* Metadatos */}
          <div>
-           <span>Autor: {author?.fields?.fullName}</span> |{' '}
+           <span>Autor: {author?.fields?.name}</span> |{' '}
            <span>Categoría: {category?.fields?.name}</span> |{' '}
            <span>Publicado: {new Date(publishedAt).toLocaleDateString('es-ES')}</span>
          </div>
@@ -760,12 +779,12 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 
 #### Instrucciones
 
-1. **Prueba el manejo de errores** desconectando temporalmente la conexión a la API. Modifica momentáneamente el token en `.env` a un valor inválido:
+1. **Prueba el manejo de errores** desconectando temporalmente la conexión a la API. Deja momentáneamente vacío el Delivery token en `.env`:
 
    ```bash
    # TEMPORAL — Solo para probar, revertir inmediatamente
-   # En .env, cambia el token por un valor inválido:
-   # VITE_CONTENTFUL_DELIVERY_TOKEN=token_invalido_para_prueba
+   # En .env, deja temporalmente vacío el token:
+   # VITE_CONTENTFUL_DELIVERY_TOKEN=
    ```
 
 2. **Recarga el servidor** (`npm run dev`) y verifica en el navegador que aparece el mensaje de error definido en los componentes ("Error al cargar los artículos. Intenta de nuevo."), NO una pantalla en blanco o un error de JavaScript sin capturar.
@@ -802,8 +821,9 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 
 1. **Crea o actualiza el archivo `README.md`** en la raíz del proyecto:
 
-   ```bash
-   cat > README.md << 'READMEEOF'
+   Crea o actualiza el archivo con VS Code o tu editor usando esta estructura:
+
+   ````markdown
    # Portal Demo — Contentful End-to-End
 
    Portal digital demo construido con React 18 + Vite y Contentful como CMS headless.
@@ -828,15 +848,15 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 
    | Content Type | Descripción               | Campos clave                          |
    |--------------|---------------------------|---------------------------------------|
-   | `article`    | Artículo del portal       | title, slug, body (Rich Text), author, category |
-   | `author`     | Autor de artículos        | fullName, bio, avatar                 |
+   | `article`    | Artículo del portal       | title, slug, body, publishedAt, coverImage, category, author |
+   | `author`     | Autor de artículos        | name, slug, bio, avatar           |
    | `category`   | Categoría de artículos    | name, slug, description               |
 
    ## Configuración
 
    1. Clona el repositorio
    2. Instala dependencias: `npm install`
-   3. Copia `.env.example` a `.env`: `cp .env.example .env`
+   3. Copia `.env.example` a `.env`: Bash `cp .env.example .env`; PowerShell `Copy-Item .env.example .env`
    4. Completa las variables en `.env` con tus credenciales de Contentful
    5. Inicia el servidor: `npm run dev`
 
@@ -861,14 +881,13 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
    - **Referencias con `include: 2`**: Las consultas incluyen datos de autor y categoría en una sola llamada API, evitando N+1 requests
    - **Filtrado en cliente vs. servidor**: El filtrado por categoría se realiza en el servidor (parámetro de query a la Delivery API), no en el cliente, para evitar cargar datos innecesarios
 
-   READMEEOF
-   ```
+   ````
 
 2. **Confirma que el README se creó correctamente**:
 
    ```bash
-   wc -l README.md   # Debe mostrar al menos 50 líneas
-   cat README.md     # Revisa el contenido visualmente
+   node -e "const s=require('fs').readFileSync('README.md','utf8');console.log('Líneas:',s.split(/\r?\n/).length)"
+   # Criterio observable: el README contiene las secciones solicitadas y puede revisarse en el editor
    ```
 
 #### Resultado Esperado
@@ -886,7 +905,7 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 1. **Crea el archivo de resultados del checklist**:
 
    ```bash
-   touch CHECKLIST_RESULTS.md
+   node -e "require('fs').closeSync(require('fs').openSync('CHECKLIST_RESULTS.md','a'))"
    ```
 
 2. **Evalúa cada ítem** y completa la tabla. A continuación se presenta el checklist completo con instrucciones de verificación para cada ítem:
@@ -912,7 +931,7 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
    | # | Criterio | Verificación | Resultado | Notas |
    |---|----------|--------------|-----------|-------|
    | B1 | El frontend usa la Delivery API Key (no la Management Key) | Revisar contentfulClient.js y comparar token con el de la UI de Contentful | PASS/FAIL | |
-   | B2 | La Delivery API responde con los artículos publicados | Llamada directa: `https://cdn.contentful.com/spaces/{id}/entries?content_type=article&access_token={token}` | PASS/FAIL | |
+| B2 | La Delivery API responde con los artículos publicados | Llamada directa con `<CONTENTFUL_SPACE_ID>`, `<CONTENTFUL_ENVIRONMENT>` y `<CONTENTFUL_DELIVERY_TOKEN>` | PASS/FAIL | |
    | B3 | Las consultas incluyen `include: 2` para resolver referencias en una sola llamada | Revisar contentfulService.js | PASS/FAIL | |
    | B4 | El filtrado por categoría se realiza como query parameter a la API (no en cliente) | Revisar la función `getArticles` con parámetro `categorySlug` | PASS/FAIL | |
    | B5 | No hay llamadas a la Management API desde el frontend | Buscar `contentful-management` en package.json y en el código fuente | PASS/FAIL | |
@@ -921,7 +940,7 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
    
    | # | Criterio | Verificación | Resultado | Notas |
    |---|----------|--------------|-----------|-------|
-   | C1 | La página de listado muestra al menos 3 artículos con título, resumen y autor | Verificar en http://localhost:5173 | PASS/FAIL | |
+   | C1 | La página de listado muestra al menos 3 artículos con título, fecha y autor | Verificar en http://localhost:5173 | PASS/FAIL | |
    | C2 | El filtro por categoría actualiza la lista correctamente | Hacer clic en cada botón de categoría y verificar que la lista cambia | PASS/FAIL | |
    | C3 | La página de detalle muestra el cuerpo del artículo renderizado (no [object Object]) | Navegar a /article/[slug] y verificar que el body se muestra como texto | PASS/FAIL | |
    | C4 | Los estados de carga y error se muestran correctamente en la UI | Probar con token inválido y slug inexistente | PASS/FAIL | |
@@ -932,9 +951,9 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
    | # | Criterio | Verificación | Resultado | Notas |
    |---|----------|--------------|-----------|-------|
    | D1 | El archivo `.env` NO está trackeado por Git | Ejecutar: `git ls-files .env` → no debe mostrar output | PASS/FAIL | |
-   | D2 | El archivo `.env.example` SÍ está trackeado y no contiene valores reales | `git ls-files .env.example` → debe aparecer; `cat .env.example` → sin tokens reales | PASS/FAIL | |
-   | D3 | No hay credenciales hardcodeadas en ningún archivo de código fuente | `grep -r "CFPAT\|spaceId.*=.*[a-z0-9]" src/` → sin resultados con tokens reales | PASS/FAIL | |
-   | D4 | El `.gitignore` incluye `.env`, `.env.local` y variantes | `cat .gitignore | grep env` → debe mostrar las entradas | PASS/FAIL | |
+   | D2 | El archivo `.env.example` SÍ está trackeado y no contiene valores reales | `git ls-files .env.example` debe mostrar el archivo; revisar que solo use placeholders | PASS/FAIL | |
+   | D3 | No hay credenciales hardcodeadas en ningún archivo de código fuente | Buscar el valor real del Delivery token entre los archivos rastreados | PASS/FAIL | |
+   | D4 | El `.gitignore` incluye `.env`, `.env.local` y variantes | Ejecutar `git check-ignore -v .env .env.local` | PASS/FAIL | |
    | D5 | El README documenta la separación de API Keys y el procedimiento de configuración segura | Revisar README.md sección Seguridad | PASS/FAIL | |
    
    ## Resumen de Resultados
@@ -955,21 +974,19 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 3. **Ejecuta las verificaciones técnicas automatizables**:
 
    ```bash
-   echo "=== Verificación D1: .env no trackeado ==="
-   git ls-files .env && echo "FAIL: .env está trackeado" || echo "PASS: .env no está trackeado"
+   # Comandos portables para Bash y PowerShell
+   git ls-files .env
+   # D1: no debe mostrar salida
 
-   echo "=== Verificación D2: .env.example trackeado ==="
-   git ls-files .env.example | grep -q ".env.example" && echo "PASS" || echo "FAIL: .env.example no está trackeado"
+   git ls-files .env.example
+   # D2: debe mostrar .env.example
 
-   echo "=== Verificación D3: Sin credenciales hardcodeadas ==="
-   # Busca patrones de tokens de Contentful (empiezan con letras y tienen guiones)
-   grep -rn "accessToken\s*=\s*['\"][a-zA-Z0-9_-]\{10,\}" src/ && echo "FAIL: Posibles credenciales hardcodeadas" || echo "PASS: Sin credenciales hardcodeadas detectadas"
+   git check-ignore -v .env .env.local
+   # D4: debe mostrar las reglas que ignoran ambos archivos
 
-   echo "=== Verificación D4: .gitignore completo ==="
-   grep -c "\.env" .gitignore | xargs -I{} test {} -ge 1 && echo "PASS" || echo "FAIL: .gitignore incompleto"
+   node -e "const fs=require('fs');const cp=require('child_process');const env=fs.readFileSync('.env','utf8');const token=env.match(/^VITE_CONTENTFUL_DELIVERY_TOKEN=(.+)$/m)?.[1]?.trim();const files=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).split(/\r?\n/).filter(Boolean);const hits=token?files.filter(f=>{try{return fs.readFileSync(f,'utf8').includes(token)}catch{return false}}):[];console.log(hits.length?'FAIL: revisar '+hits.join(', '):'PASS: valor del token no detectado en archivos rastreados')"
 
-   echo "=== Verificación B5: Sin contentful-management en frontend ==="
-   grep -r "contentful-management" src/ && echo "FAIL: Management API en frontend" || echo "PASS: Sin Management API en frontend"
+   node -e "const fs=require('fs');const p=require('path');function walk(d){return fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const f=p.join(d,e.name);return e.isDirectory()?walk(f):[f]})}const hits=walk('src').filter(f=>fs.readFileSync(f,'utf8').includes('contentful-management'));console.log(hits.length?'FAIL: revisar '+hits.join(', '):'PASS: sin contentful-management en frontend')"
    ```
 
 4. **Completa el archivo `CHECKLIST_RESULTS.md`** con los resultados de cada ítem, incluyendo notas para los ítems FAIL.
@@ -982,7 +999,11 @@ grep -n "CFPAT\|spaceId\|accessToken" src/services/contentfulService.js
 
 ---
 
-## Validación y Pruebas
+## Resultado esperado
+
+Al finalizar, `portal-noticias` utiliza el modelo canónico y muestra el listado, filtrado y detalle de artículos. El checklist técnico registra los 20 criterios evaluados, no existen credenciales reales en el repositorio y la documentación permite ejecutar y revisar el proyecto.
+
+## Validación final
 
 ### Prueba Integral del Portal
 
@@ -990,12 +1011,12 @@ Ejecuta esta secuencia de pruebas funcionales completas antes de considerar la p
 
 ```bash
 # 1. Iniciar el servidor de desarrollo
-cd ~/portal-demo
+cd ~/portal-noticias
 npm run dev
 
 # 2. Abrir http://localhost:5173 y verificar:
 #    ✓ La página carga sin errores en la consola del navegador
-#    ✓ Se muestran los artículos con título, resumen y datos de autor
+#    ✓ Se muestran los artículos con título, fecha y datos de autor
 #    ✓ Los botones de categoría están visibles
 
 # 3. Probar el filtrado:
@@ -1016,27 +1037,17 @@ npm run dev
 ### Verificación de Seguridad Final
 
 ```bash
-# Verificación completa de seguridad antes del commit final
-echo "--- AUDITORÍA DE SEGURIDAD ---"
+# Verificación portable de seguridad
+git ls-files .env .env.local
+# No debe mostrar salida
 
-echo "[1] Archivos trackeados por Git:"
-git ls-files | grep -E "\.env$|\.env\.local$"
-# No debe mostrar nada
+git check-ignore -v .env .env.local
+# Debe mostrar las reglas aplicables
 
-echo "[2] Variables de entorno en código fuente:"
-grep -rn "import\.meta\.env\." src/ | grep -v "VITE_"
-# No debe mostrar nada (todas las variables deben usar el prefijo VITE_)
-
-echo "[3] Tokens en código fuente:"
-grep -rn "[a-zA-Z0-9_-]\{40,\}" src/
-# No debe mostrar tokens reales (40+ caracteres alfanuméricos)
-
-echo "[4] Uso correcto del SDK:"
-grep -n "createClient" src/contentfulClient.js
-# Debe mostrar una sola instancia de createClient
-
-echo "--- FIN DE AUDITORÍA ---"
+node -e "const fs=require('fs');const s=fs.readFileSync('src/lib/contentfulClient.js','utf8');console.log('usa cliente único:',(s.match(/createClient/g)||[]).length===1);console.log('usa variables VITE:',s.includes('import.meta.env.VITE_CONTENTFUL_DELIVERY_TOKEN'))"
 ```
+
+> **Importante:** Las búsquedas automáticas son una ayuda, no una garantía. Revisa también `git status`, el staging y el historial; si un secreto real fue expuesto, rótalo.
 
 ---
 
@@ -1062,7 +1073,7 @@ const response = await client.getEntries({
   content_type: 'article',
   include: 2,  // ← Este parámetro es clave
 });
-// article.fields.author será { sys: {...}, fields: { fullName: 'Ana García', ... } }
+// article.fields.author será { sys: {...}, fields: { name: 'Ana García', ... } }
 ```
 
 Verifica que `contentfulService.js` incluye `include: 2` en todas las consultas que necesitan datos de referencias. Reinicia el servidor de desarrollo después de hacer el cambio.
@@ -1110,13 +1121,13 @@ Al finalizar la práctica, ejecuta los siguientes pasos para dejar el entorno en
 # 1. Detener el servidor de desarrollo (si está corriendo)
 # Presiona Ctrl+C en la terminal donde corre npm run dev
 
-# 2. Hacer commit del proyecto completado
-cd ~/portal-demo
+# 2. Opcional: hacer un commit local del proyecto completado
+cd portal-noticias
 git add .
 git status
 # Verifica que .env NO aparece en los archivos a commitear
 
-# Si .env no aparece (correcto), procede con el commit:
+# Si .env no aparece, puedes crear el commit local opcional:
 git commit -m "feat: portal demo end-to-end completado - Práctica 5
 
 - Modelo de contenido: article, author, category
@@ -1159,6 +1170,12 @@ En esta práctica integradora construiste un **portal digital demo funcional end
 - **Separación de API Keys:** La Delivery API Key (solo lectura) es la única que debe usarse en el frontend. La Management API Key nunca debe exponerse en el cliente.
 - **El checklist técnico como práctica profesional:** Validar formalmente el proyecto contra criterios de modelado, API, frontend y seguridad antes de considerar el trabajo terminado es una práctica de calidad que debe aplicarse en proyectos reales.
 
+### Preguntas de reflexión
+
+1. ¿Qué decisión del modelo de contenido tuvo mayor impacto en la implementación del frontend?
+2. ¿Qué comprobación del checklist reduce el riesgo técnico más importante del proyecto?
+3. ¿Qué aspectos deberían fortalecerse antes de llevar este portal a producción?
+
 ### Recursos Adicionales
 
 - [Documentación oficial del modelo de datos de Contentful](https://www.contentful.com/developers/docs/concepts/data-model/)
@@ -1169,4 +1186,3 @@ En esta práctica integradora construiste un **portal digital demo funcional end
 - [Parámetro `include` en la Delivery API](https://www.contentful.com/developers/docs/references/content-delivery-api/#/reference/links)
 
 ---
-LAB_END---

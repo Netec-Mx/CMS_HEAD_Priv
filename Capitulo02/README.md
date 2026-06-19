@@ -1,5 +1,22 @@
 # Consumo de la API REST de Contentful con el SDK de JavaScript
 
+## Arquitectura del laboratorio
+
+La aplicación Node.js carga la configuración segura, consulta Contentful mediante el SDK oficial y procesa la respuesta JSON.
+
+```mermaid
+flowchart LR
+    Developer[Desarrollador] --> App[App Node.js]
+    Env[.env] --> App
+    App --> SDK[SDK JavaScript de Contentful]
+    SDK --> API[Contentful Delivery API]
+    API --> Content[article / category / author]
+    Content --> JSON[Respuesta JSON]
+    JSON --> App
+```
+
+---
+
 ## Metadatos
 
 | Campo            | Detalle                                      |
@@ -15,6 +32,25 @@
 ## Descripción General
 
 En esta práctica construirás desde cero una **librería de utilidades de acceso a contenido** en Node.js que encapsula el consumo de la Content Delivery API de Contentful. Configurarás credenciales de forma segura mediante variables de entorno, inicializarás el cliente oficial del SDK de JavaScript y crearás funciones reutilizables para consultar, filtrar y paginar entradas. Finalizarás implementando un manejo de errores robusto que distinga entre errores de autenticación, recursos no encontrados y rate limiting. El proyecto resultante servirá como base para las prácticas 3, 4 y 5 del curso.
+
+---
+
+### Escenario de la práctica
+
+El equipo de desarrollo necesita una capa de acceso reutilizable para consultar el contenido publicado del portal de noticias sin duplicar configuración, filtros ni manejo de errores en cada módulo.
+
+### Objetivo de la práctica
+
+Construir una librería Node.js segura y reutilizable que consuma el modelo canónico de Contentful mediante el SDK oficial, con consultas filtradas, paginación y manejo diferenciado de errores.
+
+### Cómo trabajar esta práctica
+
+1. Trabaja sobre el espacio y el contenido publicados en la Práctica 1.
+2. Crea los archivos en el orden indicado y ejecuta cada comprobación antes de continuar.
+3. Revisa las secciones **Resultado esperado** para distinguir una ejecución correcta de un error.
+4. Completa la **Validación final** antes de reutilizar el código en la práctica siguiente.
+
+> **Importante:** Mantén `.env` fuera de Git y utiliza únicamente los placeholders indicados cuando documentes credenciales.
 
 ---
 
@@ -54,10 +90,7 @@ Al completar este laboratorio serás capaz de:
 | Visual Studio Code 1.85+                  | Instalado con extensión **ESLint** activa                            |
 | Git 2.40+                                 | Instalado y configurado con nombre/email de usuario                  |
 
-> **⚠️ Si no completaste la Práctica 1:** Ejecuta el script de importación provisto por el instructor antes de continuar:
-> ```bash
-> contentful space import --space-id <TU_SPACE_ID> --content-file starter-data.json
-> ```
+> **Prerrequisito obligatorio:** Completa la Práctica 1 antes de continuar. Este laboratorio consume el modelo canónico `article`, `category` y `author` en el environment `master`. En esta fase no se proporciona un archivo de importación alternativo.
 
 ---
 
@@ -87,16 +120,17 @@ Al completar este laboratorio serás capaz de:
 
 Ejecuta los siguientes comandos en tu terminal para verificar que todo está listo antes de comenzar:
 
+> **Compatibilidad de terminal:** Los comandos simples de `node`, `npm` y `git` funcionan en Bash y PowerShell. Los bloques que usan sintaxis exclusiva indican explícitamente la terminal correspondiente.
+
 ```bash
 # Verificar versiones instaladas
 node --version      # Debe mostrar v18.x.x o superior
 npm --version       # Debe mostrar 9.x.x o superior
 git --version       # Debe mostrar 2.40.x o superior
 
-# Verificar conectividad con Contentful (sin autenticación)
-curl -s -o /dev/null -w "%{http_code}" \
-  "https://cdn.contentful.com/spaces/cfexampleapi/entries?access_token=b4c0n73n7fu1"
-# Debe devolver: 200
+# Verificar conectividad sin colocar el token en la URL
+node -e "fetch('https://cdn.contentful.com/spaces/<CONTENTFUL_SPACE_ID>/environments/<CONTENTFUL_ENVIRONMENT>/entries?limit=1',{headers:{Authorization:'Bearer <CONTENTFUL_DELIVERY_TOKEN>'}}).then(r=>console.log('HTTP status:',r.status))"
+# Criterio observable: debe responder HTTP 200 con credenciales válidas
 ```
 
 ---
@@ -135,7 +169,7 @@ git branch -M main
 4. Crea el archivo `.gitignore` **antes de cualquier otro archivo**. Este paso es obligatorio:
 
 ```bash
-# En macOS/Linux:
+# Bash (macOS/Linux/Git Bash):
 cat > .gitignore << 'EOF'
 # Variables de entorno - NUNCA commitear
 .env
@@ -158,12 +192,24 @@ Thumbs.db
 EOF
 ```
 
-> **En Windows (PowerShell):** Crea el archivo `.gitignore` manualmente en VS Code con el contenido anterior.
+```powershell
+# PowerShell:
+@'
+.env
+.env.local
+.env.*.local
+node_modules/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+'@ | Set-Content .gitignore
+```
 
 5. Crea el archivo `.env.example` como plantilla documentada (este archivo **sí** se commitea):
 
-```bash
-cat > .env.example << 'EOF'
+```dotenv
 # ============================================================
 # PLANTILLA DE VARIABLES DE ENTORNO - lab-02-contentful-sdk
 # ============================================================
@@ -173,20 +219,21 @@ cat > .env.example << 'EOF'
 
 # Contentful - Space ID
 # Encuéntralo en: Settings → General Settings
-CONTENTFUL_SPACE_ID=your_space_id_here
+CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
 
 # Contentful - Content Delivery API Key (solo lectura, contenido publicado)
 # Encuéntrala en: Settings → API Keys → [Tu API Key] → Content Delivery API
-CONTENTFUL_DELIVERY_TOKEN=your_delivery_token_here
+CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
 
 # Contentful - Content Preview API Key (solo lectura, borradores)
 # Encuéntrala en: Settings → API Keys → [Tu API Key] → Content Preview API
-CONTENTFUL_PREVIEW_TOKEN=your_preview_token_here
+CONTENTFUL_PREVIEW_TOKEN=<CONTENTFUL_PREVIEW_TOKEN>
 
 # Contentful - Entorno (normalmente 'master' en plan gratuito)
-CONTENTFUL_ENVIRONMENT=master
-EOF
+CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
 ```
+
+> **Nota:** Crea `.env.example` con VS Code o tu editor. Este archivo contiene placeholders y sí puede versionarse.
 
 6. Crea el archivo `.env` real con tus credenciales. Abre VS Code:
 
@@ -197,10 +244,10 @@ code .
 Crea un nuevo archivo llamado `.env` (en la raíz del proyecto) y rellena tus valores reales:
 
 ```
-CONTENTFUL_SPACE_ID=xxxxxxxxxxxxxxxxx
-CONTENTFUL_DELIVERY_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-CONTENTFUL_PREVIEW_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-CONTENTFUL_ENVIRONMENT=master
+CONTENTFUL_SPACE_ID=<CONTENTFUL_SPACE_ID>
+CONTENTFUL_DELIVERY_TOKEN=<CONTENTFUL_DELIVERY_TOKEN>
+CONTENTFUL_PREVIEW_TOKEN=<CONTENTFUL_PREVIEW_TOKEN>
+CONTENTFUL_ENVIRONMENT=<CONTENTFUL_ENVIRONMENT>
 ```
 
 > **¿Dónde encontrar estos valores?**
@@ -216,14 +263,10 @@ mkdir src
 mkdir src/config
 mkdir src/services
 mkdir src/utils
-touch src/config/contentful.js
-touch src/services/contentService.js
-touch src/utils/errorHandler.js
-touch src/utils/logger.js
-touch index.js
+node -e "for(const f of ['src/config/contentful.js','src/services/contentService.js','src/utils/errorHandler.js','src/utils/logger.js','index.js']) require('fs').closeSync(require('fs').openSync(f,'a'))"
 ```
 
-8. Realiza el primer commit (solo archivos seguros):
+8. Opcionalmente, realiza un primer commit local con archivos seguros:
 
 ```bash
 git add .gitignore .env.example
@@ -231,7 +274,7 @@ git status   # Verifica que .env NO aparece en la lista
 git commit -m "chore: inicializar proyecto con configuración de seguridad"
 ```
 
-**Salida Esperada del `git status`:**
+**Resultado esperado del `git status`:**
 
 ```
 On branch main
@@ -252,7 +295,7 @@ Untracked files:
 ```bash
 # Confirmar que .env está siendo ignorado por Git
 git check-ignore -v .env
-# Salida esperada: .gitignore:3:.env    .env
+# Resultado esperado: .gitignore:3:.env    .env
 ```
 
 ---
@@ -388,14 +431,14 @@ export const logger = {
 };
 ```
 
-6. Haz un commit del progreso:
+6. Opcionalmente, haz un commit local del progreso:
 
 ```bash
 git add src/ package.json
 git commit -m "feat: inicializar cliente SDK de Contentful con configuración segura"
 ```
 
-**Salida Esperada al ejecutar `npm list contentful`:**
+**Resultado esperado al ejecutar `npm list contentful`:**
 
 ```
 lab-02-contentful-sdk@1.0.0
@@ -407,7 +450,7 @@ lab-02-contentful-sdk@1.0.0
 ```bash
 # Prueba rápida de que el cliente se inicializa sin errores
 node -e "import('./src/config/contentful.js').then(m => console.log('✅ Cliente inicializado. Space:', m.clientConfig.spaceId))"
-# Salida esperada: ✅ Cliente inicializado. Space: xxxxxxxxxxxxxxxxx
+# Resultado esperado: ✅ Cliente inicializado. Space: xxxxxxxxxxxxxxxxx
 ```
 
 ---
@@ -434,7 +477,7 @@ import { logger } from './logger.js';
 export const HTTP_CODES = {
   UNAUTHORIZED:    401,  // Token inválido o ausente
   NOT_FOUND:       404,  // Recurso (entry, space, content type) no existe
-  RATE_LIMITED:    429,  // Se superó el límite de 7 req/seg en plan gratuito
+  RATE_LIMITED:    429,  // Se superó el límite aplicable de la API
   SERVER_ERROR:    500,  // Error interno del servidor de Contentful
 };
 
@@ -474,7 +517,7 @@ export function handleContentfulError(error, context = '') {
       });
       // No lanzamos error aquí; el retry se maneja en withRetry()
       throw new ContentfulRateLimitError(
-        `Se superó el límite de peticiones (7 req/seg en plan Community). ` +
+        `Se superó el límite de peticiones indicado por Contentful. ` +
         `La función withRetry() reintentará automáticamente.`
       );
 
@@ -555,7 +598,7 @@ function sleep(ms) {
 }
 ```
 
-**Salida Esperada (sin errores de sintaxis):** El archivo se guarda sin errores en VS Code. ESLint no debe mostrar advertencias críticas.
+**Resultado esperado (sin errores de sintaxis):** El archivo se guarda sin errores en VS Code. ESLint no debe mostrar advertencias críticas.
 
 **Verificación:**
 
@@ -566,7 +609,7 @@ import('./src/utils/errorHandler.js').then(m => {
   console.log('✅ Clases exportadas:', Object.keys(m).join(', '));
 }).catch(e => console.error('❌ Error:', e.message));
 "
-# Salida esperada: ✅ Clases exportadas: HTTP_CODES, handleContentfulError, ContentfulAuthError, ContentfulNotFoundError, ContentfulRateLimitError, withRetry
+# Resultado esperado: ✅ Clases exportadas: HTTP_CODES, handleContentfulError, ContentfulAuthError, ContentfulNotFoundError, ContentfulRateLimitError, withRetry
 ```
 
 ---
@@ -595,7 +638,7 @@ import { logger } from '../utils/logger.js';
 // FUNCIÓN 1: Obtener todas las entradas de un Content Type
 //
 // Parámetros:
-//   contentType - El API ID del content type (ej: 'article', 'blogPost')
+//   contentType - El API ID canónico del content type (article, category o author)
 //   options     - Opciones adicionales: { select, order, include }
 //
 // Retorna: Array de entradas con sus campos
@@ -724,7 +767,7 @@ import('./src/services/contentService.js').then(m => {
   console.log('✅ Funciones exportadas:', fns.join(', '));
 });
 "
-# Salida esperada: ✅ Funciones exportadas: getEntriesByType, getEntriesByField, getEntryById
+# Resultado esperado: ✅ Funciones exportadas: getEntriesByType, getEntriesByField, getEntryById
 ```
 
 ---
@@ -802,7 +845,7 @@ export async function getEntriesPage(contentType, page = 1, pageSize = 5) {
 //
 // ADVERTENCIA: En espacios con miles de entradas, esta función
 // puede hacer muchas llamadas a la API. Úsala con precaución
-// y respeta el rate limit de 7 req/seg del plan Community.
+// y aplica una pausa conservadora entre lotes.
 // ============================================================
 export async function getAllEntriesPaginated(contentType, batchSize = 5) {
   logger.info('[contentService] Iniciando recuperación paginada completa', {
@@ -814,8 +857,8 @@ export async function getAllEntriesPaginated(contentType, batchSize = 5) {
   let hasMore = true;
 
   while (hasMore) {
-    // Pausa entre peticiones para respetar el rate limit (7 req/seg)
-    // En plan Community: esperar al menos 150ms entre llamadas
+    // Pausa conservadora entre peticiones; ante 429 debe respetarse
+    // el header de reintento devuelto por Contentful.
     if (currentPage > 1) {
       await sleep(200); // 200ms de pausa = máximo ~5 req/seg (seguro)
     }
@@ -849,7 +892,7 @@ function sleep(ms) {
 }
 ```
 
-**Salida Esperada:** El archivo se guarda sin errores. La función `getAllEntriesPaginated` implementa un bucle `while` que itera hasta que `hasNextPage` sea `false`.
+**Resultado esperado:** El archivo se guarda sin errores. La función `getAllEntriesPaginated` implementa un bucle `while` que itera hasta que `hasNextPage` sea `false`.
 
 **Verificación:**
 
@@ -862,7 +905,7 @@ import('./src/services/contentService.js').then(m => {
   fns.forEach(fn => console.log('  -', fn));
 });
 "
-# Salida esperada:
+# Resultado esperado:
 # ✅ Total de funciones exportadas: 5
 #   - getEntriesByType
 #   - getEntriesByField
@@ -905,13 +948,11 @@ import {
 } from './src/utils/errorHandler.js';
 
 // ============================================================
-// IMPORTANTE: Reemplaza estos valores con los de tu espacio.
-// El CONTENT_TYPE debe coincidir con el API ID del content type
-// que creaste en la Práctica 1 (ej: 'article', 'blogPost', etc.)
+// Contrato canónico creado en la Práctica 1.
 // ============================================================
-const CONTENT_TYPE = 'article';       // ← Cambia al API ID de tu content type
-const FIELD_NAME   = 'category';      // ← Cambia a un campo existente en tu CT
-const FIELD_VALUE  = 'tecnología';    // ← Cambia a un valor real de ese campo
+const CONTENT_TYPE = 'article';
+const FIELD_NAME   = 'slug';
+const FIELD_VALUE  = 'ia-transforma-desarrollo-software';
 // Para obtener un Entry ID real: ejecuta primero la DEMO 1 y copia un sys.id
 
 async function main() {
@@ -937,7 +978,7 @@ async function main() {
       const primera = result.items[0];
       console.log(`   Primera entrada:`);
       console.log(`     ID:    ${primera.sys.id}`);
-      console.log(`     Título: ${primera.fields.title || primera.fields.titulo || '(campo no encontrado)'}`);
+      console.log(`     Título: ${primera.fields.title || '(campo no encontrado)'}`);
       console.log(`     Creada: ${primera.sys.createdAt}`);
 
       // Guardamos el ID para la DEMO 3
@@ -956,7 +997,7 @@ async function main() {
     const items = await getEntriesByField(CONTENT_TYPE, FIELD_NAME, FIELD_VALUE);
     console.log(`✅ Entradas con ${FIELD_NAME}="${FIELD_VALUE}": ${items.length}`);
     items.forEach((item, idx) => {
-      console.log(`   [${idx + 1}] ${item.fields.title || item.fields.titulo || item.sys.id}`);
+      console.log(`   [${idx + 1}] ${item.fields.title || item.sys.id}`);
     });
   } catch (error) {
     handleDemoError('DEMO 2', error);
@@ -1016,8 +1057,8 @@ async function main() {
     console.log(`✅ Total de entradas recuperadas: ${todas.length}`);
     console.log(`   IDs recuperados:`);
     todas.forEach((entry, idx) => {
-      const titulo = entry.fields.title || entry.fields.titulo || '(sin título)';
-      console.log(`   [${idx + 1}] ${entry.sys.id} — ${titulo}`);
+    const title = entry.fields.title || '(sin título)';
+    console.log(`   [${idx + 1}] ${entry.sys.id} — ${title}`);
     });
   } catch (error) {
     handleDemoError('DEMO 5', error);
@@ -1065,9 +1106,7 @@ main().catch(error => {
 });
 ```
 
-2. **Ajusta las constantes** al inicio del archivo `index.js` según tu espacio:
-   - `CONTENT_TYPE`: el **API ID** de tu content type (lo encuentras en Contentful → Content Model → [tu tipo] → clic en el nombre → API Identifier)
-   - `FIELD_NAME` y `FIELD_VALUE`: un campo y valor reales de tus entradas
+2. **Verifica las constantes canónicas** al inicio de `index.js`: `CONTENT_TYPE` debe ser `article`; `FIELD_NAME` debe ser `slug`; y `FIELD_VALUE` debe coincidir con uno de los slugs publicados en la Práctica 1.
 
 3. Ejecuta el script:
 
@@ -1075,7 +1114,7 @@ main().catch(error => {
 node index.js
 ```
 
-**Salida Esperada:**
+**Resultado esperado:**
 
 ```
 ════════════════════════════════════════════════════════════
@@ -1103,15 +1142,11 @@ node index.js
 
 **Verificación:**
 
-```bash
-# El script debe terminar con código de salida 0
-echo "Código de salida: $?"
-# Salida esperada: Código de salida: 0
-```
+**Criterio observable:** El script termina sin lanzar excepciones y la terminal no reporta un código de salida distinto de cero.
 
 ---
 
-### Paso 7 — Commit Final y Revisión de Seguridad
+### Paso 7 — Revisión de Seguridad y Commit Local Opcional
 
 **Objetivo:** Asegurar que el proyecto completo está correctamente versionado y que ninguna credencial ha sido expuesta en el repositorio Git.
 
@@ -1132,7 +1167,7 @@ git add .
 git status   # Revisión final antes del commit
 ```
 
-4. Realiza el commit final:
+4. Opcionalmente, realiza un commit local final:
 
 ```bash
 git commit -m "feat: implementar librería de utilidades de acceso a Contentful
@@ -1155,7 +1190,7 @@ git commit -m "feat: implementar librería de utilidades de acceso a Contentful
 git log --oneline
 ```
 
-**Salida Esperada de `git log --oneline`:**
+**Resultado esperado de `git log --oneline`:**
 
 ```
 a1b2c3d (HEAD -> main) feat: implementar librería de utilidades de acceso a Contentful
@@ -1166,44 +1201,34 @@ i7j8k9l chore: inicializar proyecto con configuración de seguridad
 **Verificación de Seguridad Final:**
 
 ```bash
-# Buscar si algún token fue accidentalmente incluido en el historial de Git
+# Funciona en Bash y PowerShell
 git log --all --full-history -- .env
-# Salida esperada: (vacío — .env nunca fue commiteado)
+# Resultado esperado: (vacío — .env nunca fue commiteado)
 
-# Verificar que .env está en .gitignore
-grep "^\.env$" .gitignore
-# Salida esperada: .env
+# Verificar que Git ignora .env
+git check-ignore -v .env
+# Resultado esperado: una regla de .gitignore que coincide con .env
 ```
 
 ---
 
-## Validación y Pruebas
+## Validación final
 
 Ejecuta las siguientes verificaciones para confirmar que el laboratorio está completo y funcional:
 
 ### Prueba 1 — Estructura del Proyecto
 
 ```bash
-# Verificar que todos los archivos existen
-ls -la src/config/contentful.js \
-       src/services/contentService.js \
-       src/utils/errorHandler.js \
-       src/utils/logger.js \
-       index.js \
-       .env.example \
-       .gitignore
-# Todos los archivos deben existir (sin errores "No such file")
+# Verificación portable con Node.js
+node -e "const fs=require('fs'); const files=['src/config/contentful.js','src/services/contentService.js','src/utils/errorHandler.js','src/utils/logger.js','index.js','.env.example','.gitignore']; const missing=files.filter(f=>!fs.existsSync(f)); console.log(missing.length?'Faltan: '+missing.join(', '):'Todos los archivos requeridos existen'); process.exitCode=missing.length?1:0"
 ```
 
 ### Prueba 2 — Autenticación Correcta
 
 ```bash
-# Prueba directa de autenticación con curl
-source .env 2>/dev/null || export $(cat .env | xargs)
-curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" \
-  -H "Authorization: Bearer $CONTENTFUL_DELIVERY_TOKEN" \
-  "https://cdn.contentful.com/spaces/$CONTENTFUL_SPACE_ID/environments/$CONTENTFUL_ENVIRONMENT/entries?limit=1"
-# Salida esperada: HTTP Status: 200
+# Verificación portable: dotenv carga .env sin imprimir el token
+node -e "import('dotenv/config').then(()=>fetch('https://cdn.contentful.com/spaces/'+process.env.CONTENTFUL_SPACE_ID+'/environments/'+(process.env.CONTENTFUL_ENVIRONMENT||'master')+'/entries?limit=1',{headers:{Authorization:'Bearer '+process.env.CONTENTFUL_DELIVERY_TOKEN}})).then(r=>console.log('HTTP status:',r.status))"
+# Criterio observable: HTTP 200 con credenciales válidas
 ```
 
 ### Prueba 3 — Paginación Correcta
@@ -1244,10 +1269,8 @@ import('./src/services/contentService.js').then(async ({ getEntryById }) => {
 ### Prueba 5 — Seguridad de Credenciales
 
 ```bash
-# Verificar que el token no está en ningún archivo commiteado
-git show HEAD --stat | grep -v "\.env"
-git grep -l "CONTENTFUL_DELIVERY_TOKEN" -- ':!.env.example' ':!.gitignore'
-# Salida esperada: (vacío) — ningún archivo commiteado contiene el token real
+# Busca el VALOR del token en archivos rastreados, no el nombre de la variable
+node -e "import('dotenv/config').then(async()=>{const fs=await import('node:fs');const cp=await import('node:child_process');const token=process.env.CONTENTFUL_DELIVERY_TOKEN;const files=cp.execFileSync('git',['ls-files'],{encoding:'utf8'}).split(/\r?\n/).filter(Boolean);const matches=token?files.filter(f=>{try{return fs.readFileSync(f,'utf8').includes(token)}catch{return false}}):['CONTENTFUL_DELIVERY_TOKEN no definido'];console.log(matches.length?'Revisar: '+matches.join(', '):'PASS: el token no aparece en archivos rastreados');process.exitCode=matches.length?1:0})"
 ```
 
 ### Checklist de Validación Final
@@ -1284,14 +1307,14 @@ El token en el archivo `.env` es incorrecto, está incompleto (tiene espacios o 
 
 1. Verifica que el archivo `.env` existe en la raíz del proyecto (donde está `package.json`):
    ```bash
-   ls -la .env
-   # Debe mostrar el archivo con tamaño > 0
+   node -e "const fs=require('fs'); console.log('.env existe:',fs.existsSync('.env'), 'tamaño:',fs.existsSync('.env')?fs.statSync('.env').size:0)"
+   # Criterio observable: existe y su tamaño es mayor que 0
    ```
 2. Verifica el contenido del token (sin espacios ni comillas):
    ```bash
-   # Ver el valor actual (solo para diagnóstico, nunca commitear)
+   # Ver únicamente la longitud; nunca imprimas el valor del token
    node -e "import('dotenv/config').then(() => console.log('Token length:', process.env.CONTENTFUL_DELIVERY_TOKEN?.length))"
-   # El token de Contentful tiene entre 43 y 64 caracteres
+   # Criterio observable: la variable existe y tiene una longitud mayor que 0
    ```
 3. Regresa a Contentful → **Settings → API Keys** → selecciona tu API Key → copia el token completo nuevamente y pégalo en `.env` sin espacios adicionales.
 4. Confirma que estás usando el **Content Delivery API - access token** (no el Preview token) para el cliente de entrega.
@@ -1348,14 +1371,14 @@ El proyecto no está configurado para usar ES Modules. El campo `"type": "module
 Al finalizar el laboratorio, ejecuta los siguientes pasos para dejar el entorno ordenado:
 
 ```bash
-# 1. Verificar que el proyecto está completamente commiteado
+# 1. Verificar el estado local del proyecto
 git status
-# Salida esperada: "nothing to commit, working tree clean"
+# Criterio observable: no hay cambios desconocidos ni .env en staging
 
 # 2. Verificar el historial final de commits
 git log --oneline
 
-# 3. (Opcional) Comprimir el proyecto para entrega
+# 3. (Opcional, Bash con zip instalado) Comprimir el proyecto para entrega
 cd ..
 zip -r lab-02-contentful-sdk.zip lab-02-contentful-sdk/ \
   --exclude "*/node_modules/*" \
@@ -1363,9 +1386,16 @@ zip -r lab-02-contentful-sdk.zip lab-02-contentful-sdk/ \
 echo "✅ Archivo de entrega creado: lab-02-contentful-sdk.zip"
 ```
 
+```powershell
+# Alternativa PowerShell; excluye dependencias y .env
+Get-ChildItem lab-02-contentful-sdk -Recurse -File |
+  Where-Object { $_.FullName -notmatch '\\node_modules\\|\\\.env$' } |
+  Compress-Archive -DestinationPath lab-02-contentful-sdk.zip
+```
+
 > **⚠️ No elimines el proyecto.** Las prácticas 3, 4 y 5 reutilizan el espacio de Contentful y el código de `src/services/contentService.js` como base. Guarda el proyecto en un lugar accesible.
 
-> **Nota sobre el Plan Community:** Has utilizado llamadas a la Delivery API durante este lab. Recuerda que el límite es de 7 peticiones/segundo. El parámetro `sleep(200ms)` en `getAllEntriesPaginated()` garantiza que no superes este límite (~5 req/seg).
+> **Nota sobre límites:** Los límites aplicables pueden variar según el plan y la API. Ante una respuesta `429`, respeta los headers de rate limit o reintento devueltos por Contentful y aplica backoff.
 
 ---
 
@@ -1389,6 +1419,12 @@ En este laboratorio construiste una **librería de utilidades de acceso a conten
 - **Patrón Singleton para el cliente SDK:** El cliente se crea una vez en `config/contentful.js` y se reutiliza en todos los servicios, evitando conexiones redundantes.
 - **Paginación con `skip`/`limit`:** La fórmula `skip = (page - 1) * pageSize` es el patrón estándar para paginación basada en offset en APIs REST.
 - **Backoff exponencial:** Los delays de 1s, 2s, 4s entre reintentos evitan saturar la API durante picos de tráfico.
+
+### Preguntas de reflexión
+
+1. ¿Qué problemas evita centralizar la creación del cliente de Contentful?
+2. ¿En qué situaciones es necesario paginar aunque una consulta inicial parezca funcionar?
+3. ¿Cómo mejora la confiabilidad distinguir errores de autenticación, recurso no encontrado y rate limiting?
 
 ### Recursos Adicionales
 

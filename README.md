@@ -1,40 +1,59 @@
-<img src="images/neteclogo (2).png" alt="logo" width="300"/>
+# Desarrollo con CMS Headless Contentful
 
-# Desarrollo con CMS Headless – Contentful
+Versión de la tecnología: Contentful API (REST & GraphQL) / SDK JavaScript. Curso práctico enfocado en desarrolladores para modelar contenido, consumir APIs REST y GraphQL de Contentful e integrarlas en aplicaciones modernas (frontend o backend).
 
-## Plataforma de laboratorios
+## Estructura
 
-Te damos la bienvenida a la **plataforma de laboratorios** del curso **Desarrollo con CMS Headless – Contentful**. Aquí podrás explorar diferentes tecnologías a través de prácticas guiadas. ¡Desarrolla tus habilidades y lleva tus conocimientos al siguiente nivel!
+- `CapituloXX/README.md`: guía de laboratorio por capítulo.
 
-Curso práctico enfocado en desarrolladores para modelar contenido, consumir APIs REST y GraphQL de Contentful e integrarlas en aplicaciones modernas (frontend o backend).
+## Representación visual
 
-## Lista de laboratorios
+Cada laboratorio inicia con un diagrama Mermaid breve de su arquitectura. El curso no depende de capturas de pantalla ni de las imágenes heredadas ubicadas en `labs/images`, ya que pertenecen a otro material y quedan excluidas del flujo de este curso.
 
-Cada uno de estos laboratorios está diseñado para ofrecerte una experiencia práctica. Haz clic en los enlaces para comenzar.
+## Contrato técnico del curso
+
+Todos los laboratorios usan el mismo espacio de Contentful, el environment `master` y el siguiente modelo canónico. Los API IDs y Field IDs deben respetarse exactamente para mantener la continuidad entre capítulos.
+
+| Content Type | Campos esperados |
+|---|---|
+| `article` | `title`, `slug`, `body`, `publishedAt`, `coverImage`, `category`, `author` |
+| `category` | `name`, `slug`, `description` |
+| `author` | `name`, `slug`, `bio`, `avatar` |
+
+Placeholders usados en el material:
+
+- `<CONTENTFUL_SPACE_ID>`
+- `<CONTENTFUL_DELIVERY_TOKEN>`
+- `<CONTENTFUL_PREVIEW_TOKEN>`
+- `<CONTENTFUL_MANAGEMENT_TOKEN>`
+- `<CONTENTFUL_ENVIRONMENT>`: usar `master` durante el curso.
+- `<WEBHOOK_SECRET>`
+
+El proyecto frontend único se llama `portal-noticias`. Se crea en el capítulo 4 y se continúa en el capítulo 5. El cliente de Contentful se mantiene en `portal-noticias/src/lib/contentfulClient.js`.
 
 ## Lista de laboratorios
 
 ### Capítulo 1
 
-- [Práctica 1: Crear modelos y publicar primeras entradas](Capitulo01/README.md#crear-modelos-y-publicar-primeras-entradas)
+- [Crear modelos y publicar primeras entradas](Capitulo01/README.md#crear-modelos-y-publicar-primeras-entradas)
   - Descripción: El participante creará un espacio de trabajo en Contentful, definirá content types alineados a un caso de negocio, configurará campos, reglas de validación y relaciones básicas entre contenidos. Posteriormente gestionará entornos de trabajo, publicará entradas de contenido y verificará su disponibilidad para consumo mediante APIs, aplicando los conceptos de CMS Headless, arquitectura desacoplada y modelado de contenido vistos en el módulo.
   - Duración estimada: 85 min
 
 ### Capítulo 2
 
-- [Práctica 2: Consumo de la API REST de Contentful con el SDK de JavaScript](Capitulo02/README.md#crear-una-práctica-respecto-a-las-4-lecciones-de-este-capítulo)
+- [Consumo de la API REST de Contentful con el SDK de JavaScript](Capitulo02/README.md#consumo-de-la-api-rest-de-contentful-con-el-sdk-de-javascript)
   - Descripción: El participante desarrollará un cliente de integración que se autentique contra Contentful utilizando credenciales adecuadas. Consumirá información mediante endpoints REST aplicando filtros y paginación, implementará consultas utilizando el SDK oficial para JavaScript/Node y gestionará escenarios de error y excepciones comunes. La actividad permitirá validar el ciclo completo de acceso, consulta y procesamiento de contenido desde aplicaciones externas.
   - Duración estimada: 85 min
 
 ### Capítulo 3
 
-- [Práctica 3: Implementar consultas GraphQL optimizadas](Capitulo03/README.md#implementar-consultas-graphql-optimizadas)
+- [Implementar consultas GraphQL optimizadas](Capitulo03/README.md#implementar-consultas-graphql-optimizadas)
   - Descripción: El participante diseñará y ejecutará consultas GraphQL sobre modelos de contenido previamente creados, incorporando filtros avanzados, recuperación de contenidos relacionados y selección específica de atributos para minimizar el volumen de datos transferidos. Asimismo, analizará estrategias de caché, rendimiento y protección de accesos a APIs públicas, validando el impacto de las optimizaciones implementadas mediante pruebas de consumo.
   - Duración estimada: 140 min
 
 ### Capítulo 4
 
-- [Práctica 4: Flujo completo publicación → despliegue](Capitulo04/README.md#flujo-completo-publicación-despliegue)
+- [Flujo completo publicación → despliegue](Capitulo04/README.md#flujo-completo-publicación-despliegue)
   - Descripción: El participante conectará Contentful con una aplicación desarrollada en React o Angular, configurando mecanismos de consumo de contenido y evaluando conceptos de renderizado del lado del servidor o generación estática. Posteriormente implementará webhooks para automatizar procesos de despliegue, gestionará versiones de contenido y verificará el funcionamiento completo del flujo desde la publicación de cambios hasta su disponibilidad en producción.
   - Duración estimada: 100 min
 
@@ -43,12 +62,9 @@ Cada uno de estos laboratorios está diseñado para ofrecerte una experiencia pr
 - [Proyecto Demo funcional end-to-end](Capitulo05/README.md#proyecto-demo-funcional-end-to-end)
   - Descripción: El participante desarrollará un portal digital funcional utilizando Contentful como CMS Headless. Deberá diseñar el modelo de contenido, implementar un frontend consumidor de APIs, configurar mecanismos seguros de autenticación y manejo de tokens, y ejecutar pruebas funcionales utilizando un checklist técnico. El proyecto deberá demostrar el ciclo completo de gestión, publicación y consumo de contenido en un escenario real de integración end-to-end.
   - Duración estimada: 30 min
-    
 
-## 📬 **Contacto y más información**
+## Flujo de colaboración
 
-Si tienes alguna pregunta o necesitas más detalles, no dudes en [contactarnos](mailto:soporte@netec.com). También puedes encontrar más recursos en nuestra [página](https://netec.com).
-
----
-
-¡Gracias por visitar nuestra plataforma! No olvides revisar todos los laboratorios y comenzar tu viaje de aprendizaje hoy mismo.
+- Trabajar en `changes_course`.
+- Crear Pull Request hacia `main`.
+- Merge por `Squash and merge`.
