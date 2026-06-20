@@ -4,84 +4,17 @@
 
 El editor configura el modelo canónico, crea contenido y lo publica dentro del mismo espacio de Contentful.
 
-```html
-<div align="center">
-
-<svg width="1000" height="260" viewBox="0 0 1000 260" xmlns="http://www.w3.org/2000/svg">
-
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#333" />
-    </marker>
-  </defs>
-
-  <style>
-    .box {
-      fill: #f6f1ff;
-      stroke: #8b6fdc;
-      stroke-width: 1.5;
-      rx: 4;
-    }
-    .text {
-      font-family: Arial, sans-serif;
-      font-size: 13px;
-      fill: #111;
-      text-anchor: middle;
-      dominant-baseline: middle;
-    }
-    .line {
-      stroke: #333;
-      stroke-width: 1.5;
-      fill: none;
-      marker-end: url(#arrow);
-    }
-  </style>
-
-  <!-- Cajas principales -->
-  <rect class="box" x="30" y="105" width="130" height="42"/>
-  <text class="text" x="95" y="126">Usuario / Editor</text>
-
-  <rect class="box" x="210" y="105" width="145" height="42"/>
-  <text class="text" x="282.5" y="126">Contentful Space</text>
-
-  <rect class="box" x="405" y="105" width="130" height="42"/>
-  <text class="text" x="470" y="126">Content Types</text>
-
-  <rect class="box" x="600" y="40" width="105" height="42"/>
-  <text class="text" x="652.5" y="61">article</text>
-
-  <rect class="box" x="600" y="105" width="105" height="42"/>
-  <text class="text" x="652.5" y="126">category</text>
-
-  <rect class="box" x="600" y="170" width="105" height="42"/>
-  <text class="text" x="652.5" y="191">author</text>
-
-  <rect class="box" x="770" y="105" width="135" height="42"/>
-  <text class="text" x="837.5" y="126">Entries y Assets</text>
-
-  <rect class="box" x="930" y="105" width="60" height="42"/>
-  <text class="text" x="960" y="126">Publicación</text>
-
-  <!-- Flechas principales -->
-  <line class="line" x1="160" y1="126" x2="210" y2="126"/>
-  <line class="line" x1="355" y1="126" x2="405" y2="126"/>
-
-  <!-- Content Types hacia article/category/author -->
-  <path class="line" d="M535 126 C560 126, 565 61, 600 61"/>
-  <line class="line" x1="535" y1="126" x2="600" y2="126"/>
-  <path class="line" d="M535 126 C560 126, 565 191, 600 191"/>
-
-  <!-- article/category/author hacia Entries -->
-  <path class="line" d="M705 61 C735 61, 745 126, 770 126"/>
-  <line class="line" x1="705" y1="126" x2="770" y2="126"/>
-  <path class="line" d="M705 191 C735 191, 745 126, 770 126"/>
-
-  <!-- Entries hacia Publicación -->
-  <line class="line" x1="905" y1="126" x2="930" y2="126"/>
-
-</svg>
-
-</div>
+```mermaid
+flowchart LR
+    Editor[Usuario / Editor] --> Space[Contentful Space]
+    Space --> Model[Content Types]
+    Model --> Article[article]
+    Model --> Category[category]
+    Model --> Author[author]
+    Article --> Content[Entries y Assets]
+    Category --> Content
+    Author --> Content
+    Content --> Publish[Publicación]
 ```
 
 
